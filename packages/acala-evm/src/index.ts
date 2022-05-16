@@ -385,11 +385,11 @@ export const AcalaDatasourcePlugin = <
   SubstrateDatasourceProcessor<
     'substrate/AcalaEvm',
     SubstrateNetworkFilter,
+    AcalaEvmDatasource,
     {
       'substrate/AcalaEvmEvent': typeof EventProcessor;
       'substrate/AcalaEvmCall': typeof CallProcessor;
-    },
-    AcalaEvmDatasource
+    }
   >
 >{
   kind: 'substrate/AcalaEvm',

@@ -462,11 +462,11 @@ export const FrontierEvmDatasourcePlugin = <
   SubstrateDatasourceProcessor<
     'substrate/FrontierEvm',
     SubstrateNetworkFilter,
+    FrontierEvmDatasource,
     {
       'substrate/FrontierEvmEvent': typeof EventProcessor;
       'substrate/FrontierEvmCall': typeof CallProcessor;
-    },
-    FrontierEvmDatasource
+    }
   >
 >{
   kind: 'substrate/FrontierEvm',

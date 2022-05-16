@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "@subql/types": {
+      "signature": "aaec82b77192bba265d3f3d091e6bd50",
+      "file": true,
+      "replaced": "file:../.yalc/@subql/types"
+    }
+  }
+}

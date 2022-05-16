@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "@subql/types": {
+      "signature": "7bc5c98840cdfc109666b8e3256ac578",
+      "file": true,
+      "replaced": "^1.0.0"
+    }
+  }
+}

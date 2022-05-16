@@ -1,0 +1,44 @@
+{
+  "name": "@subql/datasource-processors",
+  "version": "1.0.0",
+  "description": "Datasource processors for SubQuery ",
+  "repository": "git@github.com:subquery/datasource-processors.git",
+  "author": "SubQuery Pte Limited.",
+  "license": "Apache-2.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspaces foreach -ptA run build",
+    "test": "jest",
+    "lint": "eslint . --ext .ts,.tsx",
+    "postinstall": "husky install"
+  },
+  "devDependencies": {
+    "@polkadot/api": "^8.3.2",
+    "@types/jest": "^27.5.1",
+    "@typescript-eslint/eslint-plugin": "^5.23.0",
+    "@typescript-eslint/parser": "^5.23.0",
+    "eslint": "^8.15.0",
+    "husky": ">=6",
+    "jest": "^28.1.0",
+    "lint-staged": ">=10",
+    "prettier": "2.6.2",
+    "ts-jest": "^28.0.2",
+    "ts-node": "^10.7.0"
+  },
+  "packageManager": "yarn@3.2.0",
+  "resolutions": {
+    "@subql/types": "file:.yalc/@subql/types"
+  },
+  "dependencies": {
+    "@subql/types": "file:.yalc/@subql/types"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --cache --fix",
+      "prettier --write"
+    ]
+  }
+}

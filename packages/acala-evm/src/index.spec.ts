@@ -47,6 +47,11 @@ describe('AcalaDS', () => {
     });
   });
 
+  afterAll(async () => {
+    delete (global as any).logger;
+    await api?.disconnect();
+  }, 30000);
+
   describe('AcalaEvmEvent', () => {
     const processor = AcalaEvmDatasourcePlugin.handlerProcessors['substrate/AcalaEvmEvent'];
 

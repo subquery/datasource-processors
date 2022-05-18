@@ -29,6 +29,14 @@
     // "moduleResolution": "node",                       /* Specify how TypeScript looks up a file from a given module specifier. */
     // "baseUrl": "./",                                  /* Specify the base directory to resolve non-relative module names. */
     // "paths": {},                                      /* Specify a set of entries that re-map imports to additional lookup locations. */
+    "paths": {
+      "@subql/acala-evm-processor": ["packages/acala-evm/src"],
+      "@subql/acala-evm-processor/*": ["packages/acala-evm/src/*"],
+      "@subql/frontier-evm-processor": ["packages/frontier-evm/src"],
+      "@subql/frontier-evm-processor/*": ["packages/frontier-evm/src/*"],
+      "@subql/moonbeam-evm-processor": ["packages/moonbeam-evm/src"],
+      "@subql/moonbeam-evm-processor/*": ["packages/moonbeam-evm/src/*"]
+    },
     // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
     // "typeRoots": [],                                  /* Specify multiple folders that act like `./node_modules/@types`. */
     "types": ["node", "jest"],                                      /* Specify type package names to be included without being referenced in a source file. */
@@ -96,6 +104,13 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
-  }
+    "skipLibCheck": true,                                 /* Skip type checking all .d.ts files. */
+  },
+  "references": [
+    {"path":  "packages/acala-evm"},
+    {"path":  "packages/frontier-evm"},
+    {"path":  "packages/moonbeam-evm"}
+  ],
+  "include": ["packages/**/*","test"],
+  "exclude": ["**/node_modules/**"]
 }

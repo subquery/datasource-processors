@@ -270,15 +270,15 @@ describe('FrontierDS', () => {
         ).toBeTruthy();
       });
 
-      it.skip('filters topics matching 4', () => {
-        expect(
-          processor.filterProcessor({
-            filter: {topics: [['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', '0x00']]},
-            input: log,
-            ds: {} as FrontierEvmDatasource,
-          })
-        ).toBeTruthy();
-      });
+      // it.skip('filters topics matching 4', () => {
+      //   expect(
+      //     processor.filterProcessor({
+      //       filter: {topics: [['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef', '0x00']]},
+      //       input: log,
+      //       ds: {} as FrontierEvmDatasource,
+      //     })
+      //   ).toBeTruthy();
+      // });
 
       it('filters topics matching with event', () => {
         expect(

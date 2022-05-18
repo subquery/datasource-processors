@@ -42,7 +42,7 @@ export type FrontierEvmDatasource = SubstrateCustomDatasource<
 >;
 
 export interface FrontierEvmEventFilter extends SubstrateNetworkFilter {
-  topics?: [TopicFilter, TopicFilter, TopicFilter, TopicFilter];
+  topics?: [TopicFilter, TopicFilter?, TopicFilter?, TopicFilter?];
 }
 
 export interface FrontierEvmCallFilter extends SubstrateNetworkFilter {

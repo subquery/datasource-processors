@@ -47,7 +47,7 @@ export type AcalaEvmDatasource = SubstrateCustomDatasource<
 >;
 
 export interface AcalaEvmEventFilter extends SubstrateNetworkFilter {
-  topics?: [TopicFilter, TopicFilter, TopicFilter, TopicFilter];
+  topics?: [TopicFilter, TopicFilter?, TopicFilter?, TopicFilter?];
 }
 
 export interface AcalaEvmCallFilter extends SubstrateNetworkFilter {

@@ -1,0 +1,82 @@
+name: "Release"
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  pre-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: 'Block Concurrent Executions'
+        uses: softprops/turnstyle@v1
+        with:
+          poll-interval-seconds: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+
+  Build-Publish:
+    name: Build-Publish
+    needs: pre-ci
+    if: "!startsWith(github.event.head_commit.message, '[SKIP CI]') && startsWith(github.event.head_commit.message, '[release]') && github.repository == 'subquery/subql'"
+    runs-on: ubuntu-latest
+    steps:
+      #Check out
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+    #Identify changes
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-acala-evm
+        with:
+          paths: packages/acala-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-frontier-evm
+        with:
+          paths: packages/frontier-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-moonbeam-evm
+        with:
+          paths: packages/moonbeam-evm
+      - run: yarn
+
+      - name: build
+        run: yarn build
+
+      #Publish to npm and github releases
+      - name: Publish acala-evm
+        if: steps.changed-acala-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/acala-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish frontier-evm
+        if: steps.changed-frontier-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/frontier-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish moonbeam-evm
+        if: steps.changed-moonbeam-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/moonbeam-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+

@@ -1,0 +1,85 @@
+name: "Prerelease"
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/workflows/**'
+
+jobs:
+  pre-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - name: 'Block Concurrent Executions'
+        uses: softprops/turnstyle@v1
+        with:
+          poll-interval-seconds: 10
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+
+
+  Bump-Prerelease-Publish:
+    name: Bump-Prerelease-Publish
+    needs: pre-ci
+    if: "!startsWith(github.event.head_commit.message, '[SKIP CI]') && !startsWith(github.event.head_commit.message, '[release]') && github.repository == 'subquery/subql'"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 100
+          token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-acala-evm
+        with:
+          paths: packages/acala-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-frontier-evm
+        with:
+          paths: packages/frontier-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-moonbeam-evm
+        with:
+          paths: packages/moonbeam-evm
+
+      - run: yarn
+
+      - name: build
+        run: yarn build
+
+      #Add remove-stable-version
+      - name: Bump acala-evm & deploy
+        if: steps.changed-acala-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/acala-evm
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Bump frontier-evm & deploy
+        if: steps.changed-frontier-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/frontier-evm
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Bump moonbeam-evm & deploy
+        if: steps.changed-moonbeam-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/moonbeam-evm
+          npm-token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v5
+        with:
+          message: '[SKIP CI] Prerelease'
+        env:
+          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}

@@ -11,7 +11,7 @@ import AcalaEvmDatasourcePlugin, {AcalaEvmCall, AcalaEvmDatasource, AcalaEvmEven
   level: 'debug',
   outputFormat: 'colored',
   nestedKey: 'payload',
-}).getLogger('MoonbeamTests');
+}).getLogger('AcalaTests');
 
 const baseDS: AcalaEvmDatasource = {
   kind: 'substrate/AcalaEvm',

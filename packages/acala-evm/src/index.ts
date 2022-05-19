@@ -1,7 +1,6 @@
 // Copyright 2020-2021 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import assert from 'assert';
 import {
   getPartialTransactionReceipt,
   PartialLog,
@@ -112,7 +111,9 @@ type ExecutionEvent = {
 
 function getExecutionEvent(extrinsic: SubstrateExtrinsic): ExecutionEvent {
   const executionEvent = extrinsic.events.find(
-    (evt) => evt.event.section === 'evm' && (evt.event.method === 'Executed' || evt.event.method === 'ExecutedFailed')
+    (evt) =>
+      evt.event.section === 'evm' &&
+      ['Executed', 'ExecutedFailed', 'Created', 'CreatedFailed'].includes(evt.event.method)
   );
 
   if (!executionEvent) {
@@ -205,7 +206,6 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   async transformer({assets, ds, filter, input: original}): Promise<AcalaEvmEvent[]> {
     // Acala EVM has all the logs in one substrate event, we need to process all the matching events.
     const partialLogs = findLogs(filter, original);
-    assert(partialLogs.length > 0, 'No matching logs');
 
     return partialLogs.map((partialLog) => {
       const log: AcalaEvmEvent = {
@@ -236,10 +236,6 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
 
     if (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, receipt.to?.toString())) {
       return false;
-    }
-
-    if (receipt.logs.length > 1) {
-      (global as any).logger?.warn(`Receipt logs greater than 1, received: ${receipt.logs.length}`);
     }
 
     if (!findLogs(filter, input).length) return false;

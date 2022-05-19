@@ -238,10 +238,6 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
       return false;
     }
 
-    if (receipt.logs.length > 1) {
-      (global as any).logger?.warn(`Receipt logs greater than 1, received: ${receipt.logs.length}`);
-    }
-
     if (!findLogs(filter, input).length) return false;
 
     return true;

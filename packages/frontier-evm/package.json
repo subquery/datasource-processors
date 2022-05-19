@@ -9,7 +9,7 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@subql/types": "file:../../.yalc/@subql/types",
+    "@subql/types": "^1.0.1-0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "ethers": "^5.6.5"

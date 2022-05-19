@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@subql/frontier-evm-processor": "workspaces:*",
-    "@subql/types": "^1.0.0"
+    "@subql/types": "^1.0.1-0"
   },
   "devDependencies": {
     "typescript": "^4.6.4"

@@ -23,5 +23,5 @@ jobs:
       run: yarn lint
 
     - name: test
-      run: yarn test
+      run: yarn test --forceExit
 

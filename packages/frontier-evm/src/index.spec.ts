@@ -466,6 +466,8 @@ describe('FrontierDS', () => {
             ds: {} as FrontierEvmDatasource,
           })
         ).toBeTruthy();
+
+        await moonbeamApi.disconnect();
       });
     });
   });
@@ -672,6 +674,8 @@ describe('FrontierDS', () => {
         expect(call.hash).toBe(undefined);
         expect(call.to).toBe(undefined);
         expect(call.from).toBe(undefined);
+
+        await moonbeamAlphaApi.disconnect();
       }, 400000);
 
       //Interface of transaction is EthTransaction, this was always the case pre EIP1559
@@ -706,6 +710,8 @@ describe('FrontierDS', () => {
         expect(call.r).toBeDefined();
         expect(call.s).toBeDefined();
         expect(call.v).toBeDefined();
+
+        await moonbeamApi.disconnect();
       });
 
       // Interface of transaction is TransactionV2 and tx isLegacy ===  true
@@ -741,6 +747,8 @@ describe('FrontierDS', () => {
         expect(call.r).toBeDefined();
         expect(call.s).toBeDefined();
         expect(call.v).toBeDefined();
+
+        await moonbeamApi.disconnect();
       });
 
       // TOOD find a EIP1159 transaction to write a test against

@@ -22,7 +22,7 @@ jobs:
   Bump-Prerelease-Publish:
     name: Bump-Prerelease-Publish
     needs: pre-ci
-    if: "!startsWith(github.event.head_commit.message, '[SKIP CI]') && !startsWith(github.event.head_commit.message, '[release]') && github.repository == 'subquery/subql'"
+    if: "!startsWith(github.event.head_commit.message, '[SKIP CI]') && !startsWith(github.event.head_commit.message, '[release]') && github.repository == 'subquery/datasource-processors'"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2

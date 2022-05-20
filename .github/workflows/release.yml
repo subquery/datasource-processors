@@ -73,7 +73,7 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish moonbeam-evm
-        if: steps.changed-moonbeam-evm.outputs.changed == 'true'
+        if: steps.changed-moonbeam-evm.outputs.changed == 'true' || steps.changed-frontier-evm.outputs.changed == 'true'
         uses: ./.github/actions/create-release
         with:
           package-path: packages/moonbeam-evm

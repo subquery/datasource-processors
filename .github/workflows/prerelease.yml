@@ -5,6 +5,7 @@ on:
       - main
     paths-ignore:
       - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
   pre-ci:
@@ -71,7 +72,7 @@ jobs:
           npm-token: ${{ secrets.NPM_TOKEN }}
 
       - name: Bump moonbeam-evm & deploy
-        if: steps.changed-moonbeam-evm.outputs.changed == 'true'
+        if: steps.changed-moonbeam-evm.outputs.changed == 'true' || steps.changed-frontier-evm.outputs.changed == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/moonbeam-evm

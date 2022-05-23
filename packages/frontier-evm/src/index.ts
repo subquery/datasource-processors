@@ -32,6 +32,8 @@ import {
 } from 'class-validator';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 
+export * from './frontierEthProvider';
+
 type TopicFilter = string | null | undefined;
 
 export type FrontierEvmDatasource = SubstrateCustomDatasource<

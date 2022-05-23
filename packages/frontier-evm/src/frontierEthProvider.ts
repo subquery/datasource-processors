@@ -125,7 +125,8 @@ export default class FrontierEthProvider extends Provider {
   async getBlockWithTransactions(blockHashOrBlockTag: BlockTag | Promise<BlockTag>): Promise<BlockWithTransactions> {
     const raw = await this.eth.getBlockByHash(blockHashOrBlockTag.toString(), true);
 
-    const b = raw.unwrap();
+    // Casts to unknown then back to their types are due to multiple conflicing polkadot deps
+    const b = raw.unwrap() as unknown as EthRichBlock;
 
     return {
       ...ethRichBlockToBlock(b),

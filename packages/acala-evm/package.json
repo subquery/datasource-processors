@@ -24,8 +24,5 @@
   "peerDependencies": {
     "@polkadot/api": "^8"
   },
-  "resolutions": {
-    "@polkadot/types": "8.1.1"
-  },
   "stableVersion": "0.0.0"
 }

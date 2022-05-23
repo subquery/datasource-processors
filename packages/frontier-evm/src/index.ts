@@ -31,8 +31,9 @@ import {
   IsString,
 } from 'class-validator';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
+import FrontierEthProvider from './frontierEthProvider';
 
-export * from './frontierEthProvider';
+export {FrontierEthProvider};
 
 type TopicFilter = string | null | undefined;
 

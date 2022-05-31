@@ -2825,7 +2825,7 @@ __metadata:
   resolution: "@subql/acala-evm-processor@workspace:packages/acala-evm"
   dependencies:
     "@acala-network/eth-providers": ^2.4.10
-    "@subql/types": ^1.0.1-0
+    "@subql/types": latest
     "@subql/utils": ^1.0.0
     "@types/lodash": ^4.14.182
     class-transformer: ^0.5.1
@@ -2860,7 +2860,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@subql/frontier-evm-processor@workspace:packages/frontier-evm"
   dependencies:
-    "@subql/types": ^1.0.1-0
+    "@subql/types": latest
     "@subql/utils": ^1.0.0
     class-transformer: ^0.5.1
     class-validator: ^0.13.2
@@ -2878,19 +2878,19 @@ __metadata:
   resolution: "@subql/moonbeam-evm-processor@workspace:packages/moonbeam-evm"
   dependencies:
     "@subql/frontier-evm-processor": "workspace:*"
-    "@subql/types": ^1.0.1-0
+    "@subql/types": latest
     typescript: ^4.6.4
   peerDependencies:
     "@polkadot/api": ^8
   languageName: unknown
   linkType: soft
 
-"@subql/types@npm:^1.0.1-0":
-  version: 1.0.1-0
-  resolution: "@subql/types@npm:1.0.1-0"
+"@subql/types@npm:latest":
+  version: 1.1.0
+  resolution: "@subql/types@npm:1.1.0"
   peerDependencies:
     "@polkadot/api": ^8
-  checksum: cefbddeb2baa36b5dfa785a9ca5219e36a172a6712f90a03912f35b5464719aa81ac9cd4134af08250b0e267064f92ba02982e977bbb75b3d599615707e8533e
+  checksum: fe2ee3c2d5bb97f44466cbaf2e3cf2158e88c1be6d8190e25fd8ff968efe5dcb6a02a97ba7af9e8d82032c03e932d7232e74b66904e85e7dbd0701c2dc47ec74
   languageName: node
   linkType: hard
 

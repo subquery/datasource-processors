@@ -1,6 +1,6 @@
 {
   "name": "@subql/frontier-evm-processor",
-  "version": "0.0.2-0",
+  "version": "0.0.2",
   "description": "SubQuery datasource processor for Frontier EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",

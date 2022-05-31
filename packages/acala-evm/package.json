@@ -1,6 +1,6 @@
 {
   "name": "@subql/acala-evm-processor",
-  "version": "0.0.1-0",
+  "version": "0.0.1",
   "description": "SubQuery datasource processor for Acala EVM+",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@acala-network/eth-providers": "^2.4.10",
-    "@subql/types": "^1.0.1-0",
+    "@subql/types": "latest",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "ethers": "^5.6.5"
@@ -23,6 +23,5 @@
   },
   "peerDependencies": {
     "@polkadot/api": "^8"
-  },
-  "stableVersion": "0.0.0"
+  }
 }

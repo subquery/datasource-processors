@@ -1,3 +1,0 @@
-undecided:
-  - "@subql/datasource-processors"
-  - "@subql/frontier-evm-processor"

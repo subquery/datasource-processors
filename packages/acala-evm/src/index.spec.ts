@@ -31,12 +31,13 @@ const baseDS: AcalaEvmDatasource = {
   },
 };
 
-const MANDALA_ENDPOINT = 'wss://mandala.polkawallet.io';
+const MANDALA_ENDPOINT =
+  'wss://node-6870830370282213376.rz.onfinality.io/ws?apikey=0f273197-e4d5-45e2-b23e-03b015cb7000';
 
 import {fetchBlock} from '../../../test/helpers';
 
 describe('AcalaDS', () => {
-  jest.setTimeout(10000);
+  jest.setTimeout(100000);
 
   let api: ApiPromise;
 

@@ -36,6 +36,7 @@ import FrontierEthProvider from './frontierEthProvider';
 export {FrontierEthProvider};
 
 type TopicFilter = string | null | undefined;
+type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type FrontierEvmDatasource = SubstrateCustomDatasource<
   'substrate/FrontierEvm',
@@ -53,10 +54,9 @@ export interface FrontierEvmCallFilter extends SubstrateNetworkFilter {
   function?: string;
 }
 
-export type FrontierEvmEvent<T extends Result = Result> = Omit<Log, 'blockHash'> & {
+export type FrontierEvmEvent<T extends Result = Result> = Optional<Log, 'blockHash' | 'transactionHash'> & {
   args?: T;
   blockTimestamp: Date;
-  blockHash: string | undefined;
 };
 export type FrontierEvmCall<T extends Result = Result> = Omit<TransactionResponse, 'wait' | 'confirmations'> & {
   args?: T;
@@ -201,8 +201,11 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         baseFilter.find((filter) => filter.module === evt.event.section && filter.method === evt.event.method)
       ) ?? [];
 
-    assert(!!original.extrinsic, "EVM event doesn't have an extrinsic");
-    const {hash} = getExecutionEvent(original.extrinsic); // shouldn't fail here
+    /*
+     * Example with no extrinsic https://rata.uncoverexplorer.com/block/3450156
+     * Would possibly happen with utils.batch/utils.batchAll as well
+     */
+    const {hash} = original.extrinsic ? getExecutionEvent(original.extrinsic) : {hash: undefined};
 
     const log: FrontierEvmEvent = {
       ...(eventData.toJSON() as unknown as RawEvent),

@@ -60,6 +60,7 @@ describe('AcalaDS', () => {
       let event: SubstrateEvent;
 
       beforeEach(async () => {
+        // https://acala-testnet.subscan.io/event?block=927886
         const blockNumber = 927886;
         const {events} = await fetchBlock(api, blockNumber);
 

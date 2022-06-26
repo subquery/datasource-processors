@@ -183,14 +183,16 @@ function logMatchesTopics(log: PartialLog, topics: AcalaEvmEventFilter['topics']
   return true;
 }
 
-function findLogs(filter: AcalaEvmEventFilter | undefined, input: SubstrateEvent): PartialLog[] {
+function findLogs(
+  address: string | undefined,
+  filter: AcalaEvmEventFilter | undefined,
+  input: SubstrateEvent
+): PartialLog[] {
   const receipt = getPartialTransactionReceipt(input);
 
-  if (!filter?.topics) {
-    return receipt.logs;
-  }
-
-  return receipt.logs.filter((log) => logMatchesTopics(log, filter.topics));
+  return receipt.logs
+    .filter((log) => (address ? hexStringEq(log.address, address) : true)) // Filter events for matching contract address
+    .filter((log) => logMatchesTopics(log, filter?.topics)); // Filter by topics
 }
 
 const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
@@ -205,7 +207,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   // eslint-disable-next-line @typescript-eslint/require-await
   async transformer({assets, ds, filter, input: original}): Promise<AcalaEvmEvent[]> {
     // Acala EVM has all the logs in one substrate event, we need to process all the matching events.
-    const partialLogs = findLogs(filter, original);
+    const partialLogs = findLogs(ds.processor?.options?.address, filter, original);
 
     return partialLogs.map((partialLog) => {
       const log: AcalaEvmEvent = {
@@ -232,13 +234,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     });
   },
   filterProcessor({ds, filter, input}): boolean {
-    const receipt = getPartialTransactionReceipt(input);
-
-    if (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, receipt.to?.toString())) {
-      return false;
-    }
-
-    if (!findLogs(filter, input).length) return false;
+    if (!findLogs(ds.processor?.options?.address, filter, input).length) return false;
 
     return true;
   },

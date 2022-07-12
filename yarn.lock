@@ -503,7 +503,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cosmjs/cosmwasm-stargate@npm:^0.28.10":
+"@cosmjs/cosmwasm-stargate@npm:^0.28.9":
   version: 0.28.10
   resolution: "@cosmjs/cosmwasm-stargate@npm:0.28.10"
   dependencies:
@@ -567,7 +567,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cosmjs/proto-signing@npm:0.28.10, @cosmjs/proto-signing@npm:^0.28.10":
+"@cosmjs/proto-signing@npm:0.28.10":
   version: 0.28.10
   resolution: "@cosmjs/proto-signing@npm:0.28.10"
   dependencies:
@@ -594,7 +594,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cosmjs/stargate@npm:0.28.10":
+"@cosmjs/stargate@npm:0.28.10, @cosmjs/stargate@npm:^0.28.9":
   version: 0.28.10
   resolution: "@cosmjs/stargate@npm:0.28.10"
   dependencies:
@@ -3034,25 +3034,21 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@subql/ethermint-evm-processor@workspace:packages/ethermint-evm"
   dependencies:
-    "@cosmjs/cosmwasm-stargate": ^0.28.10
-    "@cosmjs/proto-signing": ^0.28.10
-    "@subql/types": latest
-    "@subql/types-cosmos": ^0.1.1
+    "@cosmjs/cosmwasm-stargate": ^0.28.9
+    "@cosmjs/stargate": ^0.28.9
+    "@subql/types-cosmos": latest
     "@subql/utils": ^1.0.0
     class-transformer: ^0.5.1
     class-validator: ^0.13.2
     ethers: ^5.6.5
-    moonbeam-types-bundle: ^2.0.4
     pino: ^7.11.0
     typescript: ^4.6.4
-  peerDependencies:
-    "@polkadot/api": ^8
   languageName: unknown
   linkType: soft
 
-"@subql/Ethermint-evm-processor@workspace:*, @subql/Ethermint-evm-processor@workspace:packages/Ethermint-evm":
+"@subql/frontier-evm-processor@workspace:*, @subql/frontier-evm-processor@workspace:packages/frontier-evm":
   version: 0.0.0-use.local
-  resolution: "@subql/Ethermint-evm-processor@workspace:packages/Ethermint-evm"
+  resolution: "@subql/frontier-evm-processor@workspace:packages/frontier-evm"
   dependencies:
     "@subql/types": latest
     "@subql/utils": ^1.0.0
@@ -3071,7 +3067,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@subql/moonbeam-evm-processor@workspace:packages/moonbeam-evm"
   dependencies:
-    "@subql/Ethermint-evm-processor": "workspace:*"
+    "@subql/frontier-evm-processor": "workspace:*"
     "@subql/types": latest
     typescript: ^4.6.4
   peerDependencies:
@@ -3079,7 +3075,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@subql/types-cosmos@npm:^0.1.1":
+"@subql/types-cosmos@npm:latest":
   version: 0.1.1
   resolution: "@subql/types-cosmos@npm:0.1.1"
   peerDependencies:

@@ -9,7 +9,9 @@
     "build": "tsc -b"
   },
   "dependencies": {
-    "@subql/types": "latest",
+    "@cosmjs/cosmwasm-stargate": "^0.28.9",
+    "@cosmjs/stargate": "^0.28.9",
+    "@subql/types-cosmos": "latest",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
     "ethers": "^5.6.5",

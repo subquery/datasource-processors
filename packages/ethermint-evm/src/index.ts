@@ -41,12 +41,12 @@ export type EthermintEvmDatasource = SubqlCosmosCustomDatasource<
   EthermintEvmProcessorOptions
 >;
 
-export interface EthermintEvmMessageFilter {
+export interface EthermintEvmCallFilter {
   from?: string;
   method?: string;
 }
 
-class EthermintEvmMessageFilterImpl implements EthermintEvmMessageFilter {
+class EthermintEvmCallFilterImpl implements EthermintEvmCallFilter {
   @IsOptional()
   @IsEthereumAddress()
   from?: string;
@@ -55,7 +55,7 @@ class EthermintEvmMessageFilterImpl implements EthermintEvmMessageFilter {
   method?: string;
 }
 
-export type EthermintEvmMessage<T extends Result = Result> = Omit<TransactionResponse, 'wait' | 'confirmations'> & {
+export type EthermintEvmCall<T extends Result = Result> = Omit<TransactionResponse, 'wait' | 'confirmations'> & {
   args?: T;
   success: boolean;
 };
@@ -182,7 +182,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
 
   filterProcessor({ds, filter, input}): boolean {
     const rawEvent = input.event.attributes;
-
+    (global as any).logger.debug(`EthermintEvmEventFilter: ${JSON.stringify(rawEvent)}`);
     if (
       ds.processor?.options?.address &&
       !stringNormalizedEq(ds.processor.options.address, attributeKeyFinder(rawEvent, 'address')?.value)
@@ -250,21 +250,21 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
 
 const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubqlCosmosHandlerKind.Message,
-  EthermintEvmMessageFilter,
-  EthermintEvmMessage,
+  EthermintEvmCallFilter,
+  EthermintEvmCall,
   EthermintEvmDatasource
 > = {
   specVersion: '1.0.0',
-  baseFilter: [{type: '/ethermint.evm.v1.MsgEthereumT'}],
+  baseFilter: [{type: '/ethermint.evm.v1.MsgEthereumTx'}],
   baseHandlerKind: SubqlCosmosHandlerKind.Message,
-  async transformer({api, assets, ds, input: original}): Promise<[EthermintEvmMessage]> {
-    let call: EthermintEvmMessage;
+  async transformer({api, assets, ds, input: original}): Promise<[EthermintEvmCall]> {
+    let call: EthermintEvmCall;
 
     const baseCall = {
       from: original.msg.decodedMsg.from,
       to: original.msg.decodedMsg.data.to,
       nonce: original.msg.decodedMsg.data.nonce,
-      data: original.msg.decodedMsg.data.data.toHex(),
+      data: '0x' + Buffer.from(original.msg.decodedMsg.data.data).toString('hex'),
       hash: original.msg.decodedMsg.hash,
       value: original.msg.decodedMsg.data.value.toString(),
       blockNumber: original.block.block.header.height,
@@ -274,10 +274,12 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
       success: original.tx.tx.code === 0,
     };
 
-    if (original.msg.decodedMsg.data.type === '/ethermint.evm.v1.DynamicFeeTx') {
+    //(global as any).logger.info(JSON.stringify(original.msg.decodedMsg.data))
+
+    if (original.msg.decodedMsg.data.typeUrl === '/ethermint.evm.v1.DynamicFeeTx') {
       call = {
         ...baseCall,
-        chainId: original.msg.decodedMsg.data.chainId.toNumber(),
+        chainId: original.msg.decodedMsg.data.chainId,
         maxFeePerGas: BigNumber.from(original.msg.decodedMsg.data.gasFeeCap),
         maxPriorityFeePerGas: BigNumber.from(original.msg.decodedMsg.data.gasTipCap),
 
@@ -285,10 +287,10 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
         r: original.msg.decodedMsg.data.r,
         type: 2,
       };
-    } else if (original.msg.decodedMsg.data.type === '/ethermint.evm.v1.AccessListTx') {
+    } else if (original.msg.decodedMsg.data.typeUrl === '/ethermint.evm.v1.AccessListTx') {
       call = {
         ...baseCall,
-        chainId: original.msg.decodedMsg.data.chainId.toNumber(),
+        chainId: original.msg.decodedMsg.data.chainId,
         gasPrice: BigNumber.from(original.msg.decodedMsg.data.gasPrice),
         gasLimit: BigNumber.from(original.msg.decodedMsg.data.gasLimit),
 
@@ -320,18 +322,29 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
     return [call];
   },
 
-  filterProcessor({ds, filter, input}): boolean {
+  filterProcessor({ds, filter, input, registry}): boolean {
     try {
       const from = input.msg.decodedMsg.from;
-      const to = input.msg.decodedMsg.data.to;
       if (filter?.from && !stringNormalizedEq(filter.from, from)) {
         return false;
       }
+      const decodedTxData = registry.decode(input.msg.decodedMsg.data);
+      input.msg.decodedMsg.data = {
+        typeUrl: input.msg.decodedMsg.data.typeUrl,
+        ...decodedTxData,
+      };
+
+      const to = input.msg.decodedMsg.data.to;
       if (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, to)) {
         return false;
       }
 
-      if (filter?.method && input.msg.decodedMsg.data.data.toHex().indexOf(functionToSighash(filter.method)) === -1) {
+      if (
+        filter?.method &&
+        ('0x' + Buffer.from(input.msg.decodedMsg.data.data).toString('hex')).indexOf(
+          functionToSighash(filter.method)
+        ) === -1
+      ) {
         return false;
       }
 
@@ -342,9 +355,9 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
     }
   },
 
-  filterValidator(filter?: EthermintEvmMessageFilter): void {
+  filterValidator(filter?: EthermintEvmCallFilter): void {
     if (!filter) return;
-    const filterCls = plainToClass(EthermintEvmMessageFilterImpl, filter);
+    const filterCls = plainToClass(EthermintEvmCallFilterImpl, filter);
     const errors = validateSync(filterCls, {whitelist: true, forbidNonWhitelisted: true});
 
     if (errors?.length) {
@@ -353,7 +366,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
     }
   },
 
-  dictionaryQuery(filter: EthermintEvmMessageFilter, ds: EthermintEvmDatasource): DictionaryQueryEntry | undefined {
+  dictionaryQuery(filter: EthermintEvmCallFilter, ds: EthermintEvmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
       entity: 'evmTransactions',
       conditions: [],

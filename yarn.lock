@@ -3023,6 +3023,7 @@ __metadata:
     eslint: ^8.15.0
     husky: ">=6"
     jest: ^28.1.0
+    jscrypto: ^1.0.3
     lint-staged: ">=10"
     prettier: 2.6.2
     ts-jest: ^28.0.2
@@ -6508,6 +6509,15 @@ __metadata:
   bin:
     js-yaml: bin/js-yaml.js
   checksum: c7830dfd456c3ef2c6e355cc5a92e6700ceafa1d14bba54497b34a99f0376cecbb3e9ac14d3e5849b426d5a5140709a66237a8c991c675431271c4ce5504151a
+  languageName: node
+  linkType: hard
+
+"jscrypto@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "jscrypto@npm:1.0.3"
+  bin:
+    jscrypto: bin/cli.js
+  checksum: c60aab1f42459d4af26890de6aa7c9a22f40d9eacdd8b2dc6a2def9b70d7d1625905b88e4fd181b1f3725a7e37ecd5e76b42ab1b81ecd2f0850d1d39a3208998
   languageName: node
   linkType: hard
 

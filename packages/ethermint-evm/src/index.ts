@@ -6,6 +6,7 @@ import {
   SubqlCosmosMapping,
   DictionaryQueryEntry,
   SubqlCosmosDatasourceProcessor,
+  CosmosEvent,
 } from '@subql/types-cosmos';
 import {
   IsOptional,
@@ -22,6 +23,8 @@ import {Interface, Result} from '@ethersproject/abi';
 import {BigNumber} from '@ethersproject/bignumber';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 import {plainToClass} from 'class-transformer';
+import {SHA256} from 'jscrypto/SHA256';
+import {Base64} from 'jscrypto/Base64';
 
 export interface Attribute {
   readonly key: string;
@@ -141,6 +144,44 @@ function attributeKeyFinder(attrs: readonly Attribute[], key: string) {
   return attrs.find((a) => a.key === key);
 }
 
+function retrieveLogs(attributes: Attribute[]) {
+  return attributes.reduce((acc, attr) => {
+    if (attr.key === 'txLog') {
+      acc.push(JSON.parse(attr.value));
+    }
+    return acc;
+  }, [] as any[]);
+}
+
+function logMatchesTopics(log: any, topics: EthermintEvmEventFilter['topics']): boolean {
+  // Follows bloom filters https://docs.ethers.io/v5/concepts/events/#events--filters
+
+  if (!topics) return true;
+
+  for (let i = 0; i < Math.min(topics.length, 4); i++) {
+    const topic = topics[i];
+    if (!topic) {
+      continue;
+    }
+    if (!hexStringEq(eventToTopic(topic), log.topics[i])) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function findLogs(address: string | undefined, filter: EthermintEvmEventFilter | undefined, input: CosmosEvent): any[] {
+  const logs = retrieveLogs(input.event.attributes as Attribute[]);
+  return logs
+    .filter((log) => (address ? hexStringEq(log.address, address) : true)) // Filter events for matching contract address
+    .filter((log) => logMatchesTopics(log, filter?.topics)); // Filter by topics
+}
+
+function hashToHex(data: string): string {
+  return SHA256.hash(Base64.parse(data)).toString().toUpperCase();
+}
+
 const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubqlCosmosHandlerKind.Event,
   EthermintEvmEventFilter,
@@ -150,60 +191,35 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   specVersion: '1.0.0',
   baseFilter: [{type: 'tx_log'}],
   baseHandlerKind: SubqlCosmosHandlerKind.Event,
-  async transformer({api, assets, ds, input: original}): Promise<[EthermintEvmEvent]> {
-    const attributes = original.event.attributes;
+  async transformer({assets, ds, filter, input: original}): Promise<EthermintEvmEvent[]> {
+    const logs = findLogs(ds.processor?.options?.address, filter, original);
+    return logs.map((l) => {
+      const log: EthermintEvmEvent = {
+        ...l,
+        blockNumber: original.block.block.header.height,
+        blockHash: original.block.block.id,
+        blockTimestamp: original.block.block.header.time,
+      };
 
-    const log: EthermintEvmEvent = {
-      address: attributeKeyFinder(attributes, 'address')?.value || '',
-      data: attributeKeyFinder(attributes, 'data')?.value || '',
-      topics: JSON.parse(attributeKeyFinder(attributes, 'topics')?.value || '[]'),
-      blockNumber: original.block.block.header.height,
-      blockHash: undefined,
-      blockTimestamp: new Date(original.block.block.header.time),
-      transactionIndex: Number(attributeKeyFinder(attributes, 'transactionIndex')?.value || -1),
-      transactionHash: original.msg.msg.decodedMsg.hash,
-      removed: false,
-      logIndex: Number(attributeKeyFinder(attributes, 'logIndex')?.value || -1),
-    };
+      log.data = '0x' + hashToHex(log.data);
 
-    try {
-      const iface = buildInterface(ds, assets);
+      try {
+        const iface = buildInterface(ds, assets);
 
-      log.args = iface?.parseLog(log).args;
-    } catch (e) {
-      // TODO setup ts config with global defs
-      (global as any).logger.warn(
-        `Unable to parse log arguments, will be omitted from result: ${(e as Error).message}`
-      );
-    }
+        log.args = iface?.parseLog(log).args;
+      } catch (e) {
+        // TODO setup ts config with 5***** defs
+        (global as any).logger?.warn(
+          `Unable to parse log arguments, will be omitted from result: ${(e as Error).message}`
+        );
+      }
 
-    return [log];
+      return log as EthermintEvmEvent;
+    });
   },
 
   filterProcessor({ds, filter, input}): boolean {
-    const rawEvent = input.event.attributes;
-    (global as any).logger.debug(`EthermintEvmEventFilter: ${JSON.stringify(rawEvent)}`);
-    if (
-      ds.processor?.options?.address &&
-      !stringNormalizedEq(ds.processor.options.address, attributeKeyFinder(rawEvent, 'address')?.value)
-    ) {
-      return false;
-    }
-
-    // Follows bloom filters https://docs.ethers.io/v5/concepts/events/#events--filters
-    if (filter?.topics) {
-      const topics = JSON.parse(attributeKeyFinder(rawEvent, 'topics')?.value || '[]');
-      for (let i = 0; i < Math.min(filter.topics.length, 4); i++) {
-        const topic = filter.topics[i];
-        if (!topic) {
-          continue;
-        }
-
-        if (!hexStringEq(eventToTopic(topic), topics[i].toHex())) {
-          return false;
-        }
-      }
-    }
+    if (!findLogs(ds.processor?.options?.address, filter, input).length) return false;
 
     return true;
   },
@@ -257,7 +273,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
   specVersion: '1.0.0',
   baseFilter: [{type: '/ethermint.evm.v1.MsgEthereumTx'}],
   baseHandlerKind: SubqlCosmosHandlerKind.Message,
-  async transformer({api, assets, ds, input: original}): Promise<[EthermintEvmCall]> {
+  async transformer({assets, ds, input: original}): Promise<[EthermintEvmCall]> {
     let call: EthermintEvmCall;
 
     const baseCall = {
@@ -273,8 +289,6 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
       gasLimit: original.msg.decodedMsg.data.gas,
       success: original.tx.tx.code === 0,
     };
-
-    //(global as any).logger.info(JSON.stringify(original.msg.decodedMsg.data))
 
     if (original.msg.decodedMsg.data.typeUrl === '/ethermint.evm.v1.DynamicFeeTx') {
       call = {
@@ -324,15 +338,16 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
 
   filterProcessor({ds, filter, input, registry}): boolean {
     try {
-      const from = input.msg.decodedMsg.from;
-      if (filter?.from && !stringNormalizedEq(filter.from, from)) {
-        return false;
-      }
       const decodedTxData = registry.decode(input.msg.decodedMsg.data);
       input.msg.decodedMsg.data = {
         typeUrl: input.msg.decodedMsg.data.typeUrl,
         ...decodedTxData,
       };
+
+      const from = input.msg.decodedMsg.from;
+      if (filter?.from && !stringNormalizedEq(filter.from, from)) {
+        return false;
+      }
 
       const to = input.msg.decodedMsg.data.to;
       if (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, to)) {

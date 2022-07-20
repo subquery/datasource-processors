@@ -23,8 +23,6 @@ import {Interface, Result} from '@ethersproject/abi';
 import {BigNumber} from '@ethersproject/bignumber';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 import {plainToClass} from 'class-transformer';
-import {SHA256} from 'jscrypto/SHA256';
-import {Base64} from 'jscrypto/Base64';
 
 export interface Attribute {
   readonly key: string;
@@ -66,12 +64,6 @@ export type EthermintEvmCall<T extends Result = Result> = Omit<TransactionRespon
 export type EthermintEvmEvent<T extends Result = Result> = Optional<Log, 'blockHash' | 'transactionHash'> & {
   args?: T;
   blockTimestamp: Date;
-};
-
-type RawEvent = {
-  address: string;
-  topics: string[];
-  data: string;
 };
 
 @ValidatorConstraint({name: 'topicFilterValidator', async: false})
@@ -140,10 +132,6 @@ function buildInterface(ds: EthermintEvmDatasource, assets?: Record<string, stri
   return contractInterfaces[abi];
 }
 
-function attributeKeyFinder(attrs: readonly Attribute[], key: string) {
-  return attrs.find((a) => a.key === key);
-}
-
 function retrieveLogs(attributes: Attribute[]) {
   return attributes.reduce((acc, attr) => {
     if (attr.key === 'txLog') {
@@ -178,10 +166,6 @@ function findLogs(address: string | undefined, filter: EthermintEvmEventFilter |
     .filter((log) => logMatchesTopics(log, filter?.topics)); // Filter by topics
 }
 
-function hashToHex(data: string): string {
-  return SHA256.hash(Base64.parse(data)).toString().toUpperCase();
-}
-
 const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubqlCosmosHandlerKind.Event,
   EthermintEvmEventFilter,
@@ -201,7 +185,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         blockTimestamp: original.block.block.header.time,
       };
 
-      log.data = '0x' + hashToHex(log.data);
+      log.data = '0x' + Buffer.from(log.data, 'base64').toString('hex');
 
       try {
         const iface = buildInterface(ds, assets);
@@ -287,7 +271,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
       blockHash: original.block.block.id,
       timestamp: Math.round(Date.parse(original.block.block.header.time) / 1000),
       gasLimit: original.msg.decodedMsg.data.gas,
-      success: original.tx.tx.code === 0,
+      success: original.tx.tx.code !== 0,
     };
 
     if (original.msg.decodedMsg.data.typeUrl === '/ethermint.evm.v1.DynamicFeeTx') {

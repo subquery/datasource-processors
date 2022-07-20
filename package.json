@@ -34,8 +34,5 @@
       "eslint --cache --fix",
       "prettier --write"
     ]
-  },
-  "dependencies": {
-    "jscrypto": "^1.0.3"
   }
 }

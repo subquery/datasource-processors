@@ -23,7 +23,8 @@ import {Interface, Result} from '@ethersproject/abi';
 import {BigNumber} from '@ethersproject/bignumber';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 import {plainToClass} from 'class-transformer';
-
+import {setWith} from 'lodash';
+import {parseRawLog} from '@cosmjs/stargate/build/logs';
 export interface Attribute {
   readonly key: string;
   readonly value: string;
@@ -166,6 +167,17 @@ function findLogs(address: string | undefined, filter: EthermintEvmEventFilter |
     .filter((log) => logMatchesTopics(log, filter?.topics)); // Filter by topics
 }
 
+function isSuccess(rawLog: string, index: number): boolean {
+  try {
+    const log = parseRawLog(rawLog).find((l) => l.msg_index === index);
+    const txLog = log?.events.find((evt) => evt.type === 'ethereumTx');
+    const failLog = txLog?.attributes.find((attr) => attr.key === 'ethereumTxFailed');
+    return failLog === undefined;
+  } catch (e) {
+    return false;
+  }
+}
+
 const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubqlCosmosHandlerKind.Event,
   EthermintEvmEventFilter,
@@ -264,14 +276,14 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
       from: original.msg.decodedMsg.from,
       to: original.msg.decodedMsg.data.to,
       nonce: original.msg.decodedMsg.data.nonce,
-      data: '0x' + Buffer.from(original.msg.decodedMsg.data.data).toString('hex'),
+      data: '0x' + Buffer.from(original.msg.decodedMsg.data.data ?? '').toString('hex'),
       hash: original.msg.decodedMsg.hash,
       value: original.msg.decodedMsg.data.value.toString(),
       blockNumber: original.block.block.header.height,
       blockHash: original.block.block.id,
       timestamp: Math.round(Date.parse(original.block.block.header.time) / 1000),
       gasLimit: original.msg.decodedMsg.data.gas,
-      success: original.tx.tx.code !== 0,
+      success: isSuccess(original.tx.tx.log ?? '', original.idx),
     };
 
     if (original.msg.decodedMsg.data.typeUrl === '/ethermint.evm.v1.DynamicFeeTx') {
@@ -320,9 +332,9 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
     return [call];
   },
 
-  filterProcessor({ds, filter, input, registry}): boolean {
+  filterProcessor({ds, filter, input}): boolean {
     try {
-      const decodedTxData = registry.decode(input.msg.decodedMsg.data);
+      const decodedTxData = (global as any).registry.decode(input.msg.decodedMsg.data);
       input.msg.decodedMsg.data = {
         typeUrl: input.msg.decodedMsg.data.typeUrl,
         ...decodedTxData,
@@ -367,14 +379,16 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
 
   dictionaryQuery(filter: EthermintEvmCallFilter, ds: EthermintEvmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
-      entity: 'evmTransactions',
+      entity: 'messages',
       conditions: [],
     };
     if (ds.processor?.options?.address) {
-      queryEntry.conditions.push({field: 'to', value: ds.processor.options.address.toLowerCase()});
+      const nested = {};
+      setWith(nested, 'data.to', ds.processor?.options?.address);
+      queryEntry.conditions.push({field: 'data', value: nested, matcher: 'contains'});
     }
     if (filter?.from) {
-      queryEntry.conditions.push({field: 'from', value: filter.from.toLowerCase()});
+      queryEntry.conditions.push({field: 'data', value: {from: filter.from.toLowerCase()}, matcher: 'contains'});
     }
 
     if (filter?.method) {

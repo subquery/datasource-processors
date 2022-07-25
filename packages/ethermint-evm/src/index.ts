@@ -379,16 +379,14 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
 
   dictionaryQuery(filter: EthermintEvmCallFilter, ds: EthermintEvmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
-      entity: 'messages',
+      entity: 'evmTransactions',
       conditions: [],
     };
     if (ds.processor?.options?.address) {
-      const nested = {};
-      setWith(nested, 'data.to', ds.processor?.options?.address);
-      queryEntry.conditions.push({field: 'data', value: nested, matcher: 'contains'});
+      queryEntry.conditions.push({field: 'to', value: ds.processor.options.address});
     }
     if (filter?.from) {
-      queryEntry.conditions.push({field: 'data', value: {from: filter.from.toLowerCase()}, matcher: 'contains'});
+      queryEntry.conditions.push({field: 'from', value: filter.from});
     }
 
     if (filter?.method) {

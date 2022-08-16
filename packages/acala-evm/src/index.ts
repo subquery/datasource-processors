@@ -35,6 +35,7 @@ import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from '
 
 // https://github.com/AcalaNetwork/bodhi.js/blob/master/evm-subql/src/mappings/mappingHandlers.ts#L10
 const DUMMY_TX_HASH = '0x6666666666666666666666666666666666666666666666666666666666666666';
+const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
 type TopicFilter = string | null | undefined;
 
@@ -55,7 +56,7 @@ export interface AcalaEvmCallFilter extends SubstrateNetworkFilter {
 }
 
 // TODO add valid_until, access_list
-export type AcalaEvmEvent<T extends Result = Result> = Log & {args?: T; blockTimestamp: Date};
+export type AcalaEvmEvent<T extends Result = Result> = Log & {args?: T; blockTimestamp: Date; from: string};
 export type AcalaEvmCall<T extends Result = Result> = Omit<
   TransactionResponse,
   'wait' | 'confirmations' | 'r' | 's' | 'v' | 'chainId'
@@ -208,6 +209,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   async transformer({assets, ds, filter, input: original}): Promise<AcalaEvmEvent[]> {
     // Acala EVM has all the logs in one substrate event, we need to process all the matching events.
     const partialLogs = findLogs(ds.processor?.options?.address, filter, original);
+    const from = original.extrinsic ? getExecutionEvent(original.extrinsic).from : EMPTY_ADDRESS;
 
     return partialLogs.map((partialLog) => {
       const log: AcalaEvmEvent = {
@@ -217,6 +219,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         blockTimestamp: original.block.timestamp,
         transactionIndex: original.extrinsic?.idx ?? -1,
         transactionHash: original.extrinsic?.extrinsic.hash.toHex() ?? DUMMY_TX_HASH,
+        from,
       };
 
       try {

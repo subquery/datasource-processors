@@ -1,14 +1,13 @@
 // Copyright 2020-2022 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import assert from 'assert';
 import '@polkadot/api-augment';
 import {Interface, Result} from '@ethersproject/abi';
 import {Log, TransactionResponse} from '@ethersproject/abstract-provider';
 import {BigNumber} from '@ethersproject/bignumber';
 import {hexDataSlice} from '@ethersproject/bytes';
 import {ApiPromise} from '@polkadot/api';
-import {TransactionV2, EthTransaction, EvmLog, ExitReason} from '@polkadot/types/interfaces';
+import {EIP1559Transaction, TransactionV2, EthTransaction, EvmLog, ExitReason} from '@polkadot/types/interfaces';
 import {
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
@@ -19,6 +18,7 @@ import {
   SubstrateMapping,
   DictionaryQueryEntry,
   SecondLayerHandlerProcessor_1_0_0,
+  TypedEventRecord,
 } from '@subql/types';
 import {plainToClass} from 'class-transformer';
 import {
@@ -32,6 +32,7 @@ import {
 } from 'class-validator';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 import FrontierEthProvider from './frontierEthProvider';
+import {Codec} from '@polkadot/types/types';
 
 export {FrontierEthProvider};
 
@@ -124,13 +125,13 @@ function getExecutionEvent(extrinsic: SubstrateExtrinsic): ExecutionEvent {
     throw new Error('eth execution failed');
   }
 
-  const [from, to, hash, status] = executionEvent.event.data;
+  const [from, to, hash, status] = executionEvent.event.data as unknown as [Codec, Codec, Codec, ExitReason];
 
   return {
     from: from.toHex(),
     to: to.toHex(),
     hash: hash.toHex(),
-    status: status as ExitReason,
+    status,
   };
 }
 
@@ -185,6 +186,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Event,
   FrontierEvmEventFilter,
   FrontierEvmEvent,
+  [EvmLog],
   FrontierEvmDatasource
 > = {
   specVersion: '1.0.0',
@@ -199,7 +201,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     const evmEvents =
       original.extrinsic?.events.filter((evt) =>
         baseFilter.find((filter) => filter.module === evt.event.section && filter.method === evt.event.method)
-      ) ?? [];
+      ) ?? ([] as TypedEventRecord<EvmLog[]>[]);
 
     /*
      * Example with no extrinsic https://rata.uncoverexplorer.com/block/3450156
@@ -301,13 +303,14 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Call,
   FrontierEvmCallFilter,
   FrontierEvmCall,
+  [TransactionV2 | EthTransaction],
   FrontierEvmDatasource
 > = {
   specVersion: '1.0.0',
   baseFilter: [{module: 'ethereum', method: 'transact'}],
   baseHandlerKind: SubstrateHandlerKind.Call,
   async transformer({api, assets, ds, input: original}): Promise<[FrontierEvmCall]> {
-    const [tx] = original.extrinsic.method.args as [TransactionV2 | EthTransaction];
+    const [tx] = original.extrinsic.method.args;
 
     const rawTx = (tx as TransactionV2).isEip1559
       ? (tx as TransactionV2).asEip1559
@@ -336,7 +339,6 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       from,
       to, // when contract creation
       nonce: rawTx.nonce.toNumber(),
-      gasLimit: BigNumber.from(rawTx.gasLimit.toBigInt()),
       data: rawTx.input.toHex(),
       value: BigNumber.from(rawTx.value.toBigInt()),
 
@@ -354,6 +356,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       call = {
         ...baseCall,
         chainId: eip1559tx.chainId.toNumber(),
+        gasLimit: BigNumber.from(eip1559tx.gasLimit.toBigInt()),
         maxFeePerGas: BigNumber.from(eip1559tx.maxFeePerGas.toBigInt()),
         maxPriorityFeePerGas: BigNumber.from(eip1559tx.maxPriorityFeePerGas.toBigInt()),
 
@@ -373,12 +376,13 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
         r: eip2930tx.r.toHex(),
         type: 1,
       };
-    } else {
-      const legacyTx = (tx as TransactionV2).isLegacy ? (tx as TransactionV2).asLegacy : (tx as EthTransaction);
+    } /*if (((tx as TransactionV2).isLegacy))*/ else {
+      const legacyTx = (tx as TransactionV2).asLegacy ?? tx;
 
       call = {
         ...baseCall,
 
+        gasLimit: BigNumber.from(legacyTx.gasLimit.toBigInt()),
         gasPrice: BigNumber.from(legacyTx.gasPrice.toBigInt()),
         chainId: -1, // Unkonwn
 
@@ -387,7 +391,26 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
         v: legacyTx.signature.v.toNumber(),
         type: 0,
       };
-    }
+    } /* else {
+      const ethTx = tx as EthTransaction;
+      console.log(`XXXXXX ${(tx as any).asLegacy}`)
+
+      call = {
+        ...baseCall,
+
+        maxFeePerGas: BigNumber.from(ethTx.maxFeePerGas.unwrap().toBigInt()),
+        maxPriorityFeePerGas: BigNumber.from(ethTx.maxPriorityFeePerGas.unwrap().toBigInt()),
+
+        gasLimit: BigNumber.from(0),
+        gasPrice: BigNumber.from(ethTx.gasPrice.unwrap().toBigInt()),
+        chainId: ethTx.chainId.unwrap().toNumber(),
+
+        r: ethTx.r.toHex(),
+        s: ethTx.s.toHex(),
+        v: ethTx.v.toNumber(),
+        type: 0,
+      };
+    }*/
 
     try {
       const iface = buildInterface(ds, assets);
@@ -420,7 +443,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       // if `to` is null then we handle contract creation
       if (
         (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, to)) ||
-        (ds.processor?.options?.address === null && !rawTx.action.isCreate)
+        (ds.processor?.options?.address === null && !(rawTx as EIP1559Transaction).action?.isCreate)
       ) {
         return false;
       }

@@ -5,6 +5,7 @@ import {ApiPromise, WsProvider} from '@polkadot/api';
 import {Logger} from '@subql/utils';
 import {SubstrateEvent, SubstrateExtrinsic} from '@subql/types';
 import {typesBundleDeprecated} from 'moonbeam-types-bundle';
+import {TransactionV2, EthTransaction, EvmLog} from '@polkadot/types/interfaces';
 import FrontierEvmDatasourcePlugin, {FrontierEvmCall, FrontierEvmDatasource, FrontierEvmEvent} from '.';
 
 import {fetchBlock} from '../../../test/helpers';
@@ -144,6 +145,7 @@ describe('FrontierDS', () => {
     api = await ApiPromise.create({
       provider: new WsProvider('wss://moonriver.api.onfinality.io/public-ws'),
       typesBundle: typesBundleDeprecated as any,
+      noInitWarn: true,
     });
   });
 
@@ -204,12 +206,12 @@ describe('FrontierDS', () => {
   describe('FilterProcessor', () => {
     describe('FrontierEvmEvent', () => {
       const processor = FrontierEvmDatasourcePlugin.handlerProcessors['substrate/FrontierEvmEvent'];
-      let log: SubstrateEvent;
+      let log: SubstrateEvent<[EvmLog]>;
 
       beforeAll(async () => {
         const {events} = await fetchBlock(api, 752073);
 
-        log = events[4];
+        log = events[4] as SubstrateEvent<[EvmLog]>;
       });
 
       it('filters just a matching address', () => {
@@ -346,12 +348,12 @@ describe('FrontierDS', () => {
     describe('FrontierEvmCall', () => {
       const processor = FrontierEvmDatasourcePlugin.handlerProcessors['substrate/FrontierEvmCall'];
 
-      let transaction: SubstrateExtrinsic;
+      let transaction: SubstrateExtrinsic<[TransactionV2 | EthTransaction]>;
 
       beforeAll(async () => {
         const {extrinsics} = await fetchBlock(api, 763971);
 
-        transaction = extrinsics[3];
+        transaction = extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>;
       });
 
       it('can filter from', () => {
@@ -396,7 +398,7 @@ describe('FrontierDS', () => {
         const blockNumber = 442090;
         const {extrinsics} = await fetchBlock(api, blockNumber);
 
-        const contractTx = extrinsics[4];
+        const contractTx = extrinsics[4] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>;
         expect(
           processor.filterProcessor({
             filter: {},
@@ -457,7 +459,7 @@ describe('FrontierDS', () => {
         });
         const {extrinsics} = await fetchBlock(moonbeamApi, 459730);
 
-        transaction = extrinsics[3];
+        transaction = extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>;
 
         expect(
           processor.filterProcessor({
@@ -504,7 +506,7 @@ describe('FrontierDS', () => {
         const {events} = await fetchBlock(api, blockNumber);
 
         const [event] = (await processor.transformer({
-          input: events[4],
+          input: events[4] as SubstrateEvent<[EvmLog]>,
           ds: baseDS,
           api,
           assets: {erc20: erc20MiniAbi},
@@ -524,7 +526,11 @@ describe('FrontierDS', () => {
         expect(event.args?.to).toBe('0xf884c8774b09b3302f98e38C944eB352264024F8');
         expect(event.args?.value.toString()).toBe('255185643564356435');
 
-        const [event2] = (await processor.transformer({input: events[6], ds: baseDS, api})) as [FrontierEvmEvent];
+        const [event2] = (await processor.transformer({
+          input: events[6] as SubstrateEvent<[EvmLog]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmEvent];
 
         expect(event2.logIndex).toBe(2);
       });
@@ -539,7 +545,11 @@ describe('FrontierDS', () => {
         const blockNumber = 717200;
         const {extrinsics} = await fetchBlock(api, blockNumber);
 
-        const [call] = (await processor.transformer({input: extrinsics[3], ds: baseDS, api})) as [FrontierEvmCall];
+        const [call] = (await processor.transformer({
+          input: extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmCall];
 
         expect(call.from).toBe('0x6d15eff7c4d740c4683a23abeb432f0a1b255a12');
         expect(call.to).toBe('0xf03b75831397d4695a6b9dddeea0e578faa30907');
@@ -568,7 +578,11 @@ describe('FrontierDS', () => {
         const blockNumber = 829319;
         const {extrinsics} = await fetchBlock(api, blockNumber);
 
-        const [call] = (await processor.transformer({input: extrinsics[3], ds: baseDS, api})) as [FrontierEvmCall];
+        const [call] = (await processor.transformer({
+          input: extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmCall];
 
         expect(call.from).toBe('0x5aec27384dbe84d46c29a20dfeff09493711cd15');
         expect(call.to).toBe('0x2ddcfdb16c370f116e12db9863901b6e224af15a');
@@ -594,7 +608,11 @@ describe('FrontierDS', () => {
         const blockNumber = 442090;
         const {extrinsics} = await fetchBlock(api, blockNumber);
 
-        const [call] = (await processor.transformer({input: extrinsics[4], ds: baseDS, api})) as [FrontierEvmCall];
+        const [call] = (await processor.transformer({
+          input: extrinsics[4] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmCall];
 
         expect(call.from).toBe('0x9b9fc58a24f296d04d03921550c7ffc441af34ba');
         expect(call.to).toBe('0x8bd5180ccdd7ae4af832c8c03e21ce8484a128d4'); // Newly created contract address
@@ -621,7 +639,11 @@ describe('FrontierDS', () => {
         const blockNumber = 829253;
         const {extrinsics} = await fetchBlock(api, blockNumber);
 
-        const [call] = (await processor.transformer({input: extrinsics[3], ds: baseDS, api})) as [FrontierEvmCall];
+        const [call] = (await processor.transformer({
+          input: extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmCall];
 
         expect(call.from).toBe('0xd3de1f8aa8e9cf7133bb65f4555f8f09cfcb7473');
         expect(call.to).toBe('0x6c8894f4582af73df96b5e802bbbabd74a7285d2');
@@ -654,9 +676,11 @@ describe('FrontierDS', () => {
         const blockNumber = 131451;
         const {extrinsics} = await fetchBlock(moonbeamAlphaApi, blockNumber);
 
-        const [call] = (await processor.transformer({input: extrinsics[3], ds: baseDS, api: moonbeamAlphaApi})) as [
-          FrontierEvmCall
-        ];
+        const [call] = (await processor.transformer({
+          input: extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api: moonbeamAlphaApi,
+        })) as [FrontierEvmCall];
 
         expect(call.nonce).toBe(18);
         expect(call.data).toBe(
@@ -689,9 +713,11 @@ describe('FrontierDS', () => {
         const {extrinsics} = await fetchBlock(moonbeamApi, blockNumber);
 
         // https://moonbeam.subscan.io/tx/0xe2df11371c71a1372f34736ca4eefe6e6783f15592c0c7054c682020abad75c3
-        const [call] = (await processor.transformer({input: extrinsics[5], ds: baseDS, api: moonbeamApi})) as [
-          FrontierEvmCall
-        ];
+        const [call] = (await processor.transformer({
+          input: extrinsics[5] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api: moonbeamApi,
+        })) as [FrontierEvmCall];
 
         expect(call.hash).toBe('0xe2df11371c71a1372f34736ca4eefe6e6783f15592c0c7054c682020abad75c3');
         expect(call.from).toBe('0xad54f68c34df2a9a311806b84349a06786816fd2');
@@ -726,9 +752,11 @@ describe('FrontierDS', () => {
 
         // https://blockscout.moonbeam.network/tx/0x31152aa4291cd46a6e2df23e9218f70c92031f6d77d6854cd2868fe5b88578ee/token-transfers
         // https://moonbeam.subscan.io/tx/0x31152aa4291cd46a6e2df23e9218f70c92031f6d77d6854cd2868fe5b88578ee
-        const [call] = (await processor.transformer({input: extrinsics[3], ds: baseDS, api: moonbeamApi})) as [
-          FrontierEvmCall
-        ];
+        const [call] = (await processor.transformer({
+          input: extrinsics[3] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api: moonbeamApi,
+        })) as [FrontierEvmCall];
 
         expect(call.hash).toBe('0x31152aa4291cd46a6e2df23e9218f70c92031f6d77d6854cd2868fe5b88578ee');
         expect(call.from).toBe('0x9c71226863d3db3a7de3402e3743fea8026dc9e0');
@@ -759,7 +787,11 @@ describe('FrontierDS', () => {
 
         //https://moonriver.subscan.io/tx/0x7a4c3eb237f49c53363e5ee77b3b4855c7a816b9d8545296bf75495d97394548
 
-        const [call] = (await processor.transformer({input: extrinsics[5], ds: baseDS, api})) as [FrontierEvmCall];
+        const [call] = (await processor.transformer({
+          input: extrinsics[5] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+          ds: baseDS,
+          api,
+        })) as [FrontierEvmCall];
 
         expect(call.hash).toBe('0x7a4c3eb237f49c53363e5ee77b3b4855c7a816b9d8545296bf75495d97394548');
         expect(call.from).toBe('0x63c41b22f7812f5149e474746564d5010c7e839d');

@@ -1,7 +1,7 @@
 // Copyright 2020-2022 SubQuery Pte Ltd authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {
+import type {
   Block,
   BlockTag,
   BlockWithTransactions,
@@ -9,17 +9,18 @@ import {
   Filter,
   Listener,
   Log,
-  Provider,
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
 } from '@ethersproject/abstract-provider';
-import {Network} from '@ethersproject/networks';
-import {Deferrable, resolveProperties} from '@ethersproject/properties';
+import {Provider} from '@ethersproject/abstract-provider';
+import type {Network} from '@ethersproject/networks';
+import type {Deferrable} from '@ethersproject/properties';
+import {resolveProperties} from '@ethersproject/properties';
 import {BigNumber, BigNumberish} from '@ethersproject/bignumber';
 import type {Codec} from '@polkadot/types/types';
 import type {EthLog, EthRichBlock, EthTransaction} from '@polkadot/types/interfaces';
-import {Bytes} from '@polkadot/types';
+import type {Bytes} from '@polkadot/types';
 
 // Gets logger and api
 import '@subql/types/dist/global';

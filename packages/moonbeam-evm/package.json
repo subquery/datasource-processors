@@ -1,6 +1,6 @@
 {
   "name": "@subql/moonbeam-evm-processor",
-  "version": "0.0.3-3",
+  "version": "0.1.0",
   "description": "SubQuery datasource processor for Moonbeam EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
@@ -19,6 +19,5 @@
   },
   "peerDependencies": {
     "@polkadot/api": "^9"
-  },
-  "stableVersion": "0.0.3-2"
+  }
 }

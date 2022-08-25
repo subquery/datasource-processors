@@ -6,7 +6,7 @@ import {
   PartialLog,
 } from '@acala-network/eth-providers/lib/utils/transactionReceiptHelper';
 import {Interface, Result} from '@ethersproject/abi';
-import {Log, TransactionResponse} from '@ethersproject/abstract-provider';
+import type {Log, TransactionResponse} from '@ethersproject/abstract-provider';
 import {BigNumber} from '@ethersproject/bignumber';
 import {hexDataSlice} from '@ethersproject/bytes';
 import {AnyTuple} from '@polkadot/types/types';

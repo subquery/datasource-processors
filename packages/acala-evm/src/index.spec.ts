@@ -31,8 +31,7 @@ const baseDS: AcalaEvmDatasource = {
   },
 };
 
-const MANDALA_ENDPOINT =
-  'wss://node-6870830370282213376.rz.onfinality.io/ws?apikey=0f273197-e4d5-45e2-b23e-03b015cb7000';
+const MANDALA_ENDPOINT = 'wss://mandala-tc7-rpcnode.aca-dev.network/ws';
 
 import {fetchBlock} from '../../../test/helpers';
 
@@ -45,6 +44,7 @@ describe('AcalaDS', () => {
     api = await ApiPromise.create({
       provider: new WsProvider(MANDALA_ENDPOINT),
       // typesBundle: typesBundle as any,
+      noInitWarn: true,
     });
   });
 

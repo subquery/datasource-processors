@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
+import type {
   Block,
   BlockTag,
   BlockWithTransactions,
@@ -7,15 +7,16 @@ import {
   Filter,
   Listener,
   Log,
-  Provider,
   TransactionReceipt,
   TransactionRequest,
   TransactionResponse,
 } from '@ethersproject/abstract-provider';
-import {Network} from '@ethersproject/networks';
-import {Deferrable, resolveProperties} from '@ethersproject/properties';
+import {Provider} from '@ethersproject/abstract-provider';
+import type {Network} from '@ethersproject/networks';
+import type {Deferrable} from '@ethersproject/properties';
+import {resolveProperties} from '@ethersproject/properties';
 import {BigNumber, BigNumberish} from '@ethersproject/bignumber';
-import {EthLog, EthRichBlock, EthTransaction} from '@polkadot/types/interfaces';
+import type {EthLog, EthRichBlock, EthTransaction} from '@polkadot/types/interfaces';
 
 // Gets logger and api
 import '@subql/types/dist/global';

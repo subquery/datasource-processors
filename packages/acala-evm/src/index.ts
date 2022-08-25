@@ -9,6 +9,7 @@ import {Interface, Result} from '@ethersproject/abi';
 import {Log, TransactionResponse} from '@ethersproject/abstract-provider';
 import {BigNumber} from '@ethersproject/bignumber';
 import {hexDataSlice} from '@ethersproject/bytes';
+import {AnyTuple} from '@polkadot/types/types';
 import {
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
@@ -189,7 +190,7 @@ function findLogs(
   filter: AcalaEvmEventFilter | undefined,
   input: SubstrateEvent
 ): PartialLog[] {
-  const receipt = getPartialTransactionReceipt(input);
+  const receipt = getPartialTransactionReceipt(input as any);
 
   return receipt.logs
     .filter((log) => (address ? hexStringEq(log.address, address) : true)) // Filter events for matching contract address
@@ -200,6 +201,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Event,
   AcalaEvmEventFilter,
   AcalaEvmEvent,
+  AnyTuple, // TODO improve this type
   AcalaEvmDatasource
 > = {
   specVersion: '1.0.0',
@@ -281,6 +283,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Call,
   AcalaEvmCallFilter,
   AcalaEvmCall,
+  AnyTuple, // TODO improve this type
   AcalaEvmDatasource
 > = {
   specVersion: '1.0.0',

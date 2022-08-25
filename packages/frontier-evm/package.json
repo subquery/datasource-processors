@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "build:ts": "tsc -b",
-    "build:bundle": "esbuild src/index.ts --platform=node --bundle --minify --outfile=dist/bundle.js",
+    "build:bundle": "esbuild src/index.ts --platform=node --bundle --format=cjs --minify --outfile=dist/bundle.js",
     "build": "yarn build:ts && yarn build:bundle"
   },
   "dependencies": {

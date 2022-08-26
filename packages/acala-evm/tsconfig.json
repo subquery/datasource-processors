@@ -3,10 +3,9 @@
   "compilerOptions": {
     "target": "es2017",
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo",
     "rootDir": "./src",
     "outDir": "./dist",
   },
   "include": ["src/**/*"],
-  "exclude": ["**/*spec.ts"]
+  "exclude": ["**/*spec.ts", "src/bundle.ts"]
 }

@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "description": "SubQuery datasource processor for Frontier EVM",
   "main": "dist/index.js",
-  "author": "Subquery Pte Limited",
+  "author": "Subquery Pte Limited"
   "license": "Apache-2.0",
   "scripts": {
     "build:ts": "tsc -b",
-    "build:bundle": "esbuild src/index.ts --platform=node --bundle --format=cjs --minify --outfile=dist/bundle.js",
-    "build": "yarn build:ts && yarn build:bundle"
+    "build:bundle": "esbuild src/bundle.ts --platform=node --bundle --format=cjs --minify --outfile=dist/bundle.js",
+    "build": "rm -rf dist && yarn build:ts && yarn build:bundle"
   },
   "dependencies": {
     "@subql/types": "latest",

@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-08-26
 ### Added
-- `AcalaEthProvider` to query contract state (#17)
+- `AcalaEthProvider` to query contract state. (#17)
 - Bundled build output. (#18)
 ### Changed
 - Updated dependencies. (#17)

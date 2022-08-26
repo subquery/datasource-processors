@@ -6,9 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.0] - 2022-08-29
 ### Added
-- Bundled build output (#18)
+- Bundled build output. (#18)
 ### Changed
-- Updated dependencies (#17)
+- Updated dependencies. (#17)
 
 ## [0.0.2] - 2022-07-29
 

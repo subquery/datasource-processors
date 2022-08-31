@@ -1,8 +1,10 @@
 import {ApiPromise} from '@polkadot/api';
 import {Vec} from '@polkadot/types';
 import {EventRecord, SignedBlock} from '@polkadot/types/interfaces';
-import {SubstrateEvent, SubstrateExtrinsic, SubstrateBlock} from '@subql/types';
+import {SubstrateEvent, SubstrateExtrinsic, SubstrateBlock, SubstrateCustomDatasource} from '@subql/types';
 import {merge} from 'lodash';
+import fs from 'fs';
+import {isCustomDs} from '@subql/common-substrate';
 
 export function wrapBlock(signedBlock: SignedBlock, events: EventRecord[], specVersion: number): SubstrateBlock {
   return merge(signedBlock, {

@@ -1,6 +1,6 @@
 {
   "name": "@subql/ethermint-evm-processor",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "SubQuery datasource processor for Ethermint EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",

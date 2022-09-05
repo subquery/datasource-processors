@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "SubQuery datasource processor for Frontier EVM",
   "main": "dist/index.js",
-  "author": "Subquery Pte Limited"
+  "author": "Subquery Pte Limited",
   "license": "Apache-2.0",
   "scripts": {
     "build:ts": "tsc -b",

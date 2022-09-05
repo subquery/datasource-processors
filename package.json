@@ -16,8 +16,10 @@
     "postinstall": "husky install"
   },
   "devDependencies": {
+    "@actions/core": "^1.9.1",
     "@cosmjs/cosmwasm-stargate": "^0.28.11",
     "@cosmjs/stargate": "^0.28.11",
+    "@octokit/request": "^6.2.1",
     "@polkadot/api": "^9",
     "@types/jest": "^27.5.1",
     "@typescript-eslint/eslint-plugin": "^5.23.0",

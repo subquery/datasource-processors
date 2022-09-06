@@ -3,7 +3,6 @@
   "compilerOptions": {
     "target": "es2017",
     "sourceMap": true,
-    "tsBuildInfoFile": "dist/.tsbuildinfo",
     "rootDir": "./src",
     "outDir": "./dist",
   },

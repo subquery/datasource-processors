@@ -57,6 +57,13 @@ jobs:
           paths: packages/ethermint-evm
       - run: yarn
 
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-substrate-wasm
+        with:
+          paths: packages/substrate-wasm
+      - run: yarn
+
+
       - name: build
         run: yarn build
 
@@ -93,3 +100,10 @@ jobs:
           repo-token: ${{ secrets.REPO_TOKEN }}
           npm-token: ${{ secrets.NPM_TOKEN }}
 
+      - name: Publish substrate-wasm
+        if: steps.changed-substrate-wasm.outputs.changed == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/substrate-wasm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+          npm-token: ${{ secrets.NPM_TOKEN }}

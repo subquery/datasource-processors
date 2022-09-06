@@ -475,39 +475,37 @@ describe('WasmDS', () => {
 
       it('generate dictionary query with call filters selector', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query: DictionaryQueryEntry = processor.dictionaryQuery
+        const query = processor.dictionaryQuery
           ? await processor.dictionaryQuery({selector: '0x633aa551'}, ds)
           : undefined;
 
-        expect(query.conditions[1].field).toBe('selector');
-        expect(query.conditions[1].value).toBe('0x633aa551');
+        expect(query?.conditions[1].field).toBe('selector');
+        expect(query?.conditions[1].value).toBe('0x633aa551');
       });
 
       it('generate dictionary query with call filters method', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query: DictionaryQueryEntry = processor.dictionaryQuery
-          ? await processor.dictionaryQuery({method: 'get'}, ds)
-          : undefined;
-        expect(query.conditions[1].field).toBe('selector');
-        expect(query.conditions[1].value).toBe('0x2f865bd9');
+        const query = processor.dictionaryQuery ? await processor.dictionaryQuery({method: 'get'}, ds) : undefined;
+        expect(query?.conditions[1].field).toBe('selector');
+        expect(query?.conditions[1].value).toBe('0x2f865bd9');
       });
 
       it('it unique selectors', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query: DictionaryQueryEntry = processor.dictionaryQuery
+        const query = processor.dictionaryQuery
           ? await processor.dictionaryQuery({selector: '0x633aa551', method: 'flip'}, ds)
           : undefined;
-        expect(query.conditions[1].field).toBe('selector');
-        expect(query.conditions[1].value).toBe('0x633aa551');
+        expect(query?.conditions[1].field).toBe('selector');
+        expect(query?.conditions[1].value).toBe('0x633aa551');
       });
 
       it('if the selector and method not match, take selector into dictionary query only', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query: DictionaryQueryEntry = processor.dictionaryQuery
+        const query: DictionaryQueryEntry | undefined = processor.dictionaryQuery
           ? await processor.dictionaryQuery({selector: '0x633aa551', method: 'get'}, ds)
           : undefined;
-        expect(query.conditions[1].field).toBe('selector');
-        expect(query.conditions[1].value).toBe('0x633aa551');
+        expect(query?.conditions[1].field).toBe('selector');
+        expect(query?.conditions[1].value).toBe('0x633aa551');
       });
     });
   });

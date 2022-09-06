@@ -1,7 +1,6 @@
 // Copyright 2020-2021 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {AnyTuple} from '@polkadot/types/types';
 import {Bytes, Option, Compact, u128} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
 
@@ -17,11 +16,10 @@ import {
 } from '@subql/types';
 import {plainToClass} from 'class-transformer';
 import {IsOptional, validateSync, IsString} from 'class-validator';
-import {stringNormalizedEq} from './utils';
+import {stringNormalizedEq, isCustomDs} from './utils';
 import {Abi} from '@polkadot/api-contract';
 import {AbiMessage, DecodedEvent, DecodedMessage} from '@polkadot/api-contract/types';
 import {AccountId} from '@polkadot/types/interfaces';
-import {isCustomDs} from '@subql/common-substrate';
 import fs from 'fs';
 import {compactStripLength, u8aToHex} from '@polkadot/util';
 const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';

@@ -9,7 +9,6 @@ import {fetchBlock, getChainType, processChainTypes} from '../../../test/cosmosH
 import {Registry, GeneratedType} from '@cosmjs/proto-signing';
 import {CustomModule} from '@subql/types-cosmos';
 import {Tendermint34Client} from '@cosmjs/tendermint-rpc';
-import {functionToSighash} from './utils';
 const erc20MiniAbi = `[{"type":"event","name":"Approval","inputs":[{"type":"address","name":"src","internalType":"address","indexed":true},{"type":"address","name":"guy","internalType":"address","indexed":true},{"type":"uint256","name":"wad","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"event","name":"Deposit","inputs":[{"type":"address","name":"dst","internalType":"address","indexed":true},{"type":"uint256","name":"wad","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"event","name":"Transfer","inputs":[{"type":"address","name":"src","internalType":"address","indexed":true},{"type":"address","name":"dst","internalType":"address","indexed":true},{"type":"uint256","name":"wad","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"event","name":"Withdrawal","inputs":[{"type":"address","name":"src","internalType":"address","indexed":true},{"type":"uint256","name":"wad","internalType":"uint256","indexed":false}],"anonymous":false},{"type":"fallback","stateMutability":"payable","payable":true},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"allowance","inputs":[{"type":"address","name":"","internalType":"address"},{"type":"address","name":"","internalType":"address"}],"constant":true},{"type":"function","stateMutability":"nonpayable","payable":false,"outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"approve","inputs":[{"type":"address","name":"guy","internalType":"address"},{"type":"uint256","name":"wad","internalType":"uint256"}],"constant":false},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"balanceOf","inputs":[{"type":"address","name":"","internalType":"address"}],"constant":true},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"uint8","name":"","internalType":"uint8"}],"name":"decimals","inputs":[],"constant":true},{"type":"function","stateMutability":"payable","payable":true,"outputs":[],"name":"deposit","inputs":[],"constant":false},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"string","name":"","internalType":"string"}],"name":"name","inputs":[],"constant":true},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"string","name":"","internalType":"string"}],"name":"symbol","inputs":[],"constant":true},{"type":"function","stateMutability":"view","payable":false,"outputs":[{"type":"uint256","name":"","internalType":"uint256"}],"name":"totalSupply","inputs":[],"constant":true},{"type":"function","stateMutability":"nonpayable","payable":false,"outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"transfer","inputs":[{"type":"address","name":"dst","internalType":"address"},{"type":"uint256","name":"wad","internalType":"uint256"}],"constant":false},{"type":"function","stateMutability":"nonpayable","payable":false,"outputs":[{"type":"bool","name":"","internalType":"bool"}],"name":"transferFrom","inputs":[{"type":"address","name":"src","internalType":"address"},{"type":"address","name":"dst","internalType":"address"},{"type":"uint256","name":"wad","internalType":"uint256"}],"constant":false},{"type":"function","stateMutability":"nonpayable","payable":false,"outputs":[],"name":"withdraw","inputs":[{"type":"uint256","name":"wad","internalType":"uint256"}],"constant":false}]`;
 
 (global as any).logger = new Logger({
@@ -123,6 +122,7 @@ describe('EthermintDS', () => {
             ds: {
               processor: {options: {address: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517'}},
             } as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -133,6 +133,7 @@ describe('EthermintDS', () => {
             filter: {},
             input: log,
             ds: {processor: {options: {address: '0x00'}}} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });
@@ -143,6 +144,7 @@ describe('EthermintDS', () => {
             filter: {topics: ['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -153,6 +155,7 @@ describe('EthermintDS', () => {
             filter: {topics: [null, null, '0x0000000000000000000000000bdf933abb0e8c2cd57d67129d3ef75414f7c774']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -169,6 +172,7 @@ describe('EthermintDS', () => {
             },
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -189,6 +193,7 @@ describe('EthermintDS', () => {
             filter: {topics: ['Transfer(address indexed src, address indexed dst, uint256 wad)']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
 
@@ -197,6 +202,7 @@ describe('EthermintDS', () => {
             filter: {topics: ['Transfer(address src, address dst, uint256 wad)']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
 
@@ -205,6 +211,7 @@ describe('EthermintDS', () => {
             filter: {topics: ['Transfer(address, address, uint256)']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -215,6 +222,7 @@ describe('EthermintDS', () => {
             filter: {topics: ['0x6bd193ee6d2104f14f94e2ca6efefae561a4334b']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });
@@ -231,6 +239,7 @@ describe('EthermintDS', () => {
             },
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });
@@ -241,6 +250,7 @@ describe('EthermintDS', () => {
             filter: {topics: [null, null, '0xbdf933abb0e8c2cd57d67129d3ef75414f7c774']},
             input: log,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -263,6 +273,7 @@ describe('EthermintDS', () => {
             filter: {from: ''},
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
         expect(
@@ -270,6 +281,7 @@ describe('EthermintDS', () => {
             filter: {from: '0x0000000000000000000000000000000000000000'},
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });
@@ -282,6 +294,7 @@ describe('EthermintDS', () => {
             ds: {
               processor: {options: {address: '0xD4949664cD82660AaE99bEdc034a0deA8A0bd517'}},
             } as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
         expect(
@@ -291,6 +304,7 @@ describe('EthermintDS', () => {
             ds: {
               processor: {options: {address: '0x0000000000000000000000000000000000000000'}},
             } as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });
@@ -319,6 +333,7 @@ describe('EthermintDS', () => {
             },
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
         expect(
@@ -326,6 +341,7 @@ describe('EthermintDS', () => {
             filter: {method: 'transfer(address, uint256)'},
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
       });
@@ -336,6 +352,7 @@ describe('EthermintDS', () => {
             filter: {method: '0xa9059cbb'},
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeTruthy();
 
@@ -344,6 +361,7 @@ describe('EthermintDS', () => {
             filter: {method: '0x0000000'},
             input: transaction,
             ds: {} as EthermintEvmDatasource,
+            registry: {} as Registry,
           })
         ).toBeFalsy();
       });

@@ -3,6 +3,7 @@
 
 import {Bytes, Option, Compact, u128} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
+import {hexToU8a} from '@polkadot/util';
 
 import {
   SubstrateDatasourceProcessor,
@@ -207,7 +208,7 @@ export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
     if (!iAbi) {
       throw new Error(`Decode event failed, got abi undefined`);
     }
-    decodedEvent[data.toString()] = iAbi?.decodeEvent(data);
+    decodedEvent[data.toString()] = iAbi?.decodeEvent(hexToU8a(data.toString()));
   }
   return decodedEvent[data.toString()];
 }
@@ -220,7 +221,7 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
     if (!iAbi) {
       throw new Error(`Decode message failed, got abi undefined`);
     }
-    decodedMessage[data.toString()] = iAbi?.decodeMessage(data);
+    decodedMessage[data.toString()] = iAbi?.decodeMessage(hexToU8a(data.toString()));
   }
   return decodedMessage[data.toString()];
 }
@@ -424,17 +425,17 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       if (filter?.from && !stringNormalizedEq(filter.from, from)) {
         return false;
       }
-      const decodeMessage = iAbi?.decodeMessage(data.toU8a());
+      const decodedMessage = decodeMessage(data.toU8a());
       if (
         ds.processor?.options?.contract &&
         !stringNormalizedEq(ds.processor?.options?.contract, (dest as Address).toString())
       ) {
         return false;
       }
-      if (filter?.method && !stringNormalizedEq(filter.method, decodeMessage?.message.method)) {
+      if (filter?.method && !stringNormalizedEq(filter.method, decodedMessage?.message.method)) {
         return false;
       }
-      if (filter?.selector && !stringNormalizedEq(filter.selector, decodeMessage?.message.selector.toString())) {
+      if (filter?.selector && !stringNormalizedEq(filter.selector, decodedMessage?.message.selector.toString())) {
         return false;
       }
       return true;

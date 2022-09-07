@@ -112,7 +112,6 @@ describe('WasmDS', () => {
       const decoded = decodeMessage(extrinsics[2].extrinsic.args[4].toU8a(), flipAbi);
       console.log(decoded);
     });
-
     it('decode event', async function () {
       const erc20Abi = await buildAbi(dsTransfer);
       const blockNumber = 2135058;
@@ -126,120 +125,76 @@ describe('WasmDS', () => {
       console.log(decoded?.event);
       expect(decoded?.event.identifier).toBe('Transfer');
     });
+  });
 
-    describe('WasmEvent', () => {
-      const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmEvent'];
-      let event: SubstrateEvent<ContractEmittedResult>;
-      let ds: WasmDatasource;
-      beforeEach(async () => {
-        // https://shibuya.subscan.io/extrinsic/2099968-5?event=2099968-25
-        const blockNumber = 2135058;
-        const {events} = await fetchBlock(api, blockNumber);
+  describe('WasmEvent', () => {
+    const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmEvent'];
+    let event: SubstrateEvent<ContractEmittedResult>;
+    let ds: WasmDatasource;
+    beforeEach(async () => {
+      const blockNumber = 2135058;
+      const {events} = await fetchBlock(api, blockNumber);
 
-        event = events[7] as SubstrateEvent<ContractEmittedResult>;
+      event = events[7] as SubstrateEvent<ContractEmittedResult>;
 
-        ds = {
-          kind: 'substrate/Wasm',
-          processor: {
-            file: '',
-            options: {
-              abi: 'erc20',
-              contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-            },
+      ds = {
+        kind: 'substrate/Wasm',
+        processor: {
+          file: '',
+          options: {
+            abi: 'erc20',
+            contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
           },
-          assets: new Map([
-            ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
-          ]),
-          mapping: {
-            handlers: [
-              {
-                handler: 'handleSubstrateWasmEvent',
-                kind: 'substrate/WasmEvent',
-              },
-            ],
-          },
-        } as unknown as WasmDatasource;
-      });
-
-      describe('Filtering', () => {
-        // it('filters matching contract address', () => {
-        //   expect(
-        //     processor.filterProcessor({
-        //       filter: {},
-        //       input: event,
-        //       ds: {
-        //         processor: {options: {contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H'}},
-        //       } as WasmDatasource,
-        //     })
-        //   ).toBeTruthy();
-        //
-        //   expect(
-        //     processor.filterProcessor({
-        //       filter: {},
-        //       input: event,
-        //       ds: {
-        //         processor: {options: {contract: '0x0000000000000000000000000000000000000000'}},
-        //       } as WasmDatasource,
-        //     })
-        //   ).toBeFalsy();
-        // });
-
-        it('filters topics', async () => {
-          expect(
-            await processor.filterProcessor({
-              filter: {},
-              input: event,
-              ds,
-            })
-          ).toBeTruthy();
-          expect(
-            await processor.filterProcessor({
-              filter: {
-                contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-                identifier: 'Transfer',
-              },
-              input: event,
-              ds,
-            })
-          ).toBeTruthy();
-          expect(
-            await processor.filterProcessor({
-              filter: {identifier: '0x6bd193ee6d2104f14f94e2ca6efefae561a4334b'},
-              input: event,
-              ds,
-            })
-          ).toBeFalsy();
-        });
-      });
-
-      describe('Transforming', () => {
-        it('can transform a contract event', async () => {
-          //https://shibuya.subscan.io/extrinsic/2135058-2?event=2135058-7
-          const blockNumber = 2135058;
-          const {events} = await fetchBlock(api, blockNumber);
-
-          const [event] = (await processor.transformer({
-            input: events[7] as SubstrateEvent<ContractEmittedResult>,
-            filter: {
-              contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+        },
+        assets: new Map([
+          ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
+        ]),
+        mapping: {
+          handlers: [
+            {
+              handler: 'handleSubstrateWasmEvent',
+              kind: 'substrate/WasmEvent',
             },
-            ds: baseDS,
-            api,
-          })) as [WasmEvent<TransferEventArgs>];
-          expect(event.from).toBe('av9BM7KemzinhqPvqHePZMDCLbw28iL2c2bZVeyj3XAa5T6');
-          expect(event.contract.toString()).toBe('a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H');
-          expect(event.identifier).toBe('Transfer');
-          console.log(event.args);
-        });
+          ],
+        },
+      } as unknown as WasmDatasource;
+    });
+
+    describe('Filtering', () => {
+      it('filters matching contract address', async () => {
+        // expect(
+        //   processor.filterProcessor({
+        //     filter: {},
+        //     input: event,
+        //     ds: {
+        //       processor: {options: {contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H'}},
+        //     } as WasmDatasource,
+        //   })
+        // ).toBeTruthy();
+
+        expect(
+          await processor.filterProcessor({
+            filter: {},
+            input: event,
+            ds: {
+              processor: {options: {contract: '0x0000000000000000000000000000000000000000'}},
+              assets: new Map([
+                ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
+              ]),
+            } as WasmDatasource,
+          })
+        ).toBeFalsy();
       });
 
-      describe('improve performance', () => {
-        it('only decode data once at filtering and transforming', async () => {
-          //TODO, spy on decodeEvent
-          // const AbiDecodeEventSpy = jest.spyOn(
-          //     Abi as any,
-          //     `decodeEvent`,
-          // );
+      it('filters topics', async () => {
+        expect(
+          await processor.filterProcessor({
+            filter: {},
+            input: event,
+            ds,
+          })
+        ).toBeTruthy();
+        expect(
           await processor.filterProcessor({
             filter: {
               contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
@@ -247,17 +202,63 @@ describe('WasmDS', () => {
             },
             input: event,
             ds,
-          });
-          await processor.transformer({
+          })
+        ).toBeTruthy();
+        expect(
+          await processor.filterProcessor({
+            filter: {identifier: '0x6bd193ee6d2104f14f94e2ca6efefae561a4334b'},
             input: event,
-            filter: {
-              contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-            },
-            ds: baseDS,
-            api,
-          });
-          // expect(AbiDecodeEventSpy).toHaveBeenCalledTimes(1)
+            ds,
+          })
+        ).toBeFalsy();
+      });
+    });
+
+    describe('Transforming', () => {
+      it('can transform a contract event', async () => {
+        //https://shibuya.subscan.io/extrinsic/2135058-2?event=2135058-7
+        const blockNumber = 2135058;
+        const {events} = await fetchBlock(api, blockNumber);
+
+        const [event] = (await processor.transformer({
+          input: events[7] as SubstrateEvent<ContractEmittedResult>,
+          filter: {
+            contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+          },
+          ds: baseDS,
+          api,
+        })) as [WasmEvent<TransferEventArgs>];
+        expect(event.from).toBe('av9BM7KemzinhqPvqHePZMDCLbw28iL2c2bZVeyj3XAa5T6');
+        expect(event.contract.toString()).toBe('a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H');
+        expect(event.identifier).toBe('Transfer');
+        console.log(event.args);
+      });
+    });
+
+    describe('improve performance', () => {
+      it('only decode data once at filtering and transforming', async () => {
+        //TODO, spy on decodeEvent
+        // const AbiDecodeEventSpy = jest.spyOn(
+        //     Abi as any,
+        //     `decodeEvent`,
+        // );
+        await processor.filterProcessor({
+          filter: {
+            contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+            identifier: 'Transfer',
+          },
+          input: event,
+          ds,
         });
+        await processor.transformer({
+          input: event,
+          filter: {
+            contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+          },
+          ds: baseDS,
+          api,
+        });
+        // expect(AbiDecodeEventSpy).toHaveBeenCalledTimes(1)
       });
     });
   });

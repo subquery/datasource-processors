@@ -3,7 +3,7 @@
 
 import {Bytes, Option, Compact, u128} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
-import {hexToU8a, u8aToU8a} from '@polkadot/util';
+import {u8aToU8a} from '@polkadot/util';
 
 import {
   SubstrateDatasourceProcessor,
@@ -221,7 +221,7 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
     if (!iAbi) {
       throw new Error(`Decode message failed, got abi undefined`);
     }
-    decodedMessage[data.toString()] = iAbi?.decodeMessage(data);
+    decodedMessage[data.toString()] = iAbi?.decodeMessage(u8aToU8a(data));
   }
   return decodedMessage[data.toString()];
 }

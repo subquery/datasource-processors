@@ -221,10 +221,6 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
     if (!iAbi) {
       throw new Error(`Decode message failed, got abi undefined`);
     }
-    if (data !== u8aToU8a(data)) {
-      console.log(`data not same`);
-    }
-
     decodedMessage[data.toString()] = iAbi?.decodeMessage(data);
   }
   return decodedMessage[data.toString()];

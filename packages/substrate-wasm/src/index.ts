@@ -1,9 +1,9 @@
 // Copyright 2020-2021 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
-import {Bytes, Option, Compact, u128} from '@polkadot/types';
+import {Bytes, Option, Compact, u128, u8, Vec} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
-import {hexToU8a, u8aToU8a} from '@polkadot/util';
+import {u8aToU8a, hexToU8a} from '@polkadot/util';
 
 import {
   SubstrateDatasourceProcessor,
@@ -89,7 +89,7 @@ export interface WasmCallFilter extends SubstrateNetworkFilter {
 
 export type ContractEmittedResult = [AccountId, Bytes];
 
-export type ContractCallArgs = [Address, BalanceOf, Weight, Option<Compact<u128>>, Bytes];
+export type ContractCallArgs = [Address, BalanceOf, Weight, Option<Compact<u128>>, Vec<u8>];
 
 // TODO add valid_until, access_list
 export interface WasmEvent<T extends Result = Result> {
@@ -208,7 +208,7 @@ export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
     if (!iAbi) {
       throw new Error(`Decode event failed, got abi undefined`);
     }
-    decodedEvent[data.toString()] = iAbi?.decodeEvent(u8aToU8a(data));
+    decodedEvent[data.toString()] = iAbi?.decodeEvent(hexToU8a(data.toString()));
   }
   return decodedEvent[data.toString()];
 }
@@ -221,7 +221,7 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
     if (!iAbi) {
       throw new Error(`Decode message failed, got abi undefined`);
     }
-    decodedMessage[data.toString()] = iAbi?.decodeMessage(data);
+    decodedMessage[data.toString()] = iAbi?.decodeMessage(u8aToU8a(data));
   }
   return decodedMessage[data.toString()];
 }

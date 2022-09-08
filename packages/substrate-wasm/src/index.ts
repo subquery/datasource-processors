@@ -114,6 +114,7 @@ export interface WasmCall<T extends Result = Result> {
   success: boolean;
   hash: string;
   blockNumber: number;
+  idx: number;
   blockHash: string;
   timestamp: Date;
 }
@@ -147,6 +148,9 @@ class WasmCallFilterImpl implements WasmCallFilter {
   @IsString()
   @IsOptional()
   method?: string; // label
+  @IsString()
+  @IsOptional()
+  from?: string; // contract caller/extrinsic signer
 }
 
 const dsAssets: Record<string, string> = {};
@@ -159,7 +163,7 @@ let decodedMessage: Record<string, DecodedMessage> = {};
 //get identifier index from abi json, in order construct dictionary query
 const eventIndexes: Record<string, number> = {};
 const methodSelectors: Record<string, string> = {};
-export async function getDsAssets(ds: WasmDatasource, abi: string): Promise<string> {
+export function getDsAssets(ds: WasmDatasource, abi: string): string {
   if (!isCustomDs(ds)) {
     throw new Error(`data source is not a custom data source`);
   }
@@ -180,7 +184,7 @@ export async function getDsAssets(ds: WasmDatasource, abi: string): Promise<stri
   }
   return dsAssets[abi];
 }
-export async function buildAbi(ds: WasmDatasource): Promise<Abi | undefined> {
+export function buildAbi(ds: WasmDatasource): Abi | undefined {
   const abi = ds.processor?.options?.abi;
   if (!abi || !ds.assets) {
     return;
@@ -189,7 +193,7 @@ export async function buildAbi(ds: WasmDatasource): Promise<Abi | undefined> {
   if (!contractAbis[abi]) {
     // Constructing the interface validates the ABI
     try {
-      const asset = await getDsAssets(ds, abi);
+      const asset = getDsAssets(ds, abi);
       const abiObj = JSON.parse(asset);
       contractAbis[abi] = new Abi(abiObj);
     } catch (e) {
@@ -225,7 +229,7 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
   }
   return decodedMessage[data.toString()];
 }
-export async function getEventIndex(identifier: string, ds: WasmDatasource): Promise<number | undefined> {
+export function getEventIndex(identifier: string, ds: WasmDatasource): number | undefined {
   if (eventIndexes[identifier]) {
     return eventIndexes[identifier];
   } else {
@@ -233,7 +237,7 @@ export async function getEventIndex(identifier: string, ds: WasmDatasource): Pro
     if (!abi) {
       throw new Error(`Abi must be provided to get event index`);
     }
-    const asset = await getDsAssets(ds, abi);
+    const asset = getDsAssets(ds, abi);
     const abiObj = JSON.parse(asset) as unknown as JSONAbi;
     const eventIndex = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.events.findIndex(
       (event) => event.label === identifier
@@ -246,7 +250,7 @@ export async function getEventIndex(identifier: string, ds: WasmDatasource): Pro
   }
   return eventIndexes[identifier];
 }
-export async function methodToSelector(method: string, ds: WasmDatasource): Promise<string | undefined> {
+export function methodToSelector(method: string, ds: WasmDatasource): string | undefined {
   if (methodSelectors[method]) {
     return methodSelectors[method];
   } else {
@@ -254,7 +258,7 @@ export async function methodToSelector(method: string, ds: WasmDatasource): Prom
     if (!abi) {
       throw new Error(`Abi must be provided to find message and its selector`);
     }
-    const asset = await getDsAssets(ds, abi);
+    const asset = getDsAssets(ds, abi);
     const abiObj = JSON.parse(asset) as unknown as JSONAbi;
     const message = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.messages.find(
       (message) => message.label === method
@@ -290,7 +294,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     const [contract, data] = original.event.data;
     let decodedData: DecodedEvent | undefined;
     try {
-      const iAbi = await buildAbi(ds);
+      const iAbi = buildAbi(ds);
       decodedData = decodeEvent(data, iAbi);
       if (decodedData === undefined) {
         (global as any).logger?.warn(
@@ -319,13 +323,13 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
       },
     ];
   },
-  async filterProcessor({ds, filter, input}): Promise<boolean> {
+  filterProcessor({ds, filter, input}): boolean {
     const [contract, data] = input.event.data;
     if (ds.processor?.options?.contract && !stringNormalizedEq(ds.processor.options.contract, contract.toString())) {
       return false;
     }
     if (filter?.identifier) {
-      const iAbi = await buildAbi(ds);
+      const iAbi = buildAbi(ds);
       const decoded = decodeEvent(data, iAbi);
 
       const determine = decoded?.event.identifier === filter.identifier;
@@ -343,7 +347,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
       throw new Error(`Invalid WASM event filter.\n${errorMsgs}`);
     }
   },
-  async dictionaryQuery(filter: WasmEventFilter, ds: WasmDatasource): Promise<DictionaryQueryEntry | undefined> {
+  dictionaryQuery(filter: WasmEventFilter, ds: WasmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
       entity: 'contractEmitted',
       conditions: [],
@@ -358,7 +362,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     }
     // TODO, in order extract identifier will require abi/metadata
     if (filter?.identifier) {
-      const eventIndex = await getEventIndex(filter.identifier, ds);
+      const eventIndex = getEventIndex(filter.identifier, ds);
       if (eventIndex === undefined) {
         (global as any).logger?.warn(
           `Unable to locate identifier ${filter?.identifier} in abi, will be omitted from dictionary filter`
@@ -390,7 +394,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     );
     let decodedMessage: DecodedMessage | undefined;
     try {
-      const iAbi = await buildAbi(ds);
+      const iAbi = buildAbi(ds);
       decodedMessage = decodeMessage(data.toU8a(), iAbi);
     } catch (e) {
       // TODO setup ts config with global defs
@@ -412,16 +416,15 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       hash: original.extrinsic.hash.toHex(), // Substrate extrinsic hash
       blockNumber: original.block.block.header.number.toNumber(),
       blockHash: original.block.block.hash.toHex(), // Substrate block hash
+      idx: original.idx,
       timestamp: original.block.timestamp,
     };
     return [call];
   },
-  async filterProcessor({ds, filter, input}): Promise<boolean> {
+  filterProcessor({ds, filter, input}): boolean {
     try {
       const [dest, , , , data] = input.extrinsic.args;
-      const iAbi = await buildAbi(ds);
       const from = input.extrinsic.signer.toString();
-
       if (filter?.from && !stringNormalizedEq(filter.from, from)) {
         return false;
       }
@@ -431,12 +434,20 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       ) {
         return false;
       }
-      const decodedMessage = decodeMessage(data.toU8a(), iAbi);
-      if (filter?.method && !stringNormalizedEq(filter.method, decodedMessage?.message.method)) {
-        return false;
-      }
-      if (filter?.selector && !stringNormalizedEq(filter.selector, decodedMessage?.message.selector.toString())) {
-        return false;
+      try {
+        const iAbi = buildAbi(ds);
+        const decodedMessage = decodeMessage(data.toU8a(), iAbi);
+        if (filter?.method && !stringNormalizedEq(filter.method, decodedMessage?.message.method)) {
+          return false;
+        }
+        if (filter?.selector && !stringNormalizedEq(filter.selector, decodedMessage?.message.selector.toString())) {
+          return false;
+        }
+      } catch (e) {
+        //If unable to decode use abi, ty to use getSelector method to filter
+        if (filter?.selector) {
+          return filter.selector === getSelector(data.toU8a());
+        }
       }
       return true;
     } catch (e) {
@@ -454,7 +465,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       throw new Error(`Invalid Wasm call filter.\n${errorMsgs}`);
     }
   },
-  async dictionaryQuery(filter: WasmCallFilter, ds: WasmDatasource): Promise<DictionaryQueryEntry | undefined> {
+  dictionaryQuery(filter: WasmCallFilter, ds: WasmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
       entity: 'contractsCall',
       conditions: [],
@@ -467,7 +478,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       queryEntry.conditions.push({field: 'selector', value: filter.selector});
     }
     if (filter?.method) {
-      const selector = await methodToSelector(filter.method, ds);
+      const selector = methodToSelector(filter.method, ds);
       if (selector === undefined) {
         (global as any).logger?.warn(
           `Unable to locate method ${filter.method} in abi, will be omitted from dictionary filter`
@@ -496,7 +507,7 @@ export const WasmDatasourcePlugin = <
   >
 >{
   kind: 'substrate/Wasm',
-  async validate(ds: WasmDatasource, assets: Record<string, string>): Promise<void> {
+  validate(ds: WasmDatasource, assets: Record<string, string>): void {
     if (ds.processor.options) {
       const opts = plainToClass(WasmProcessorOptions, ds.processor.options);
       const errors = validateSync(opts, {whitelist: true, forbidNonWhitelisted: true});
@@ -505,7 +516,7 @@ export const WasmDatasourcePlugin = <
         throw new Error(`Invalid Wasm call filter.\n${errorMsgs}`);
       }
     }
-    await buildAbi(ds); // Will throw if unable to construct
+    buildAbi(ds); // Will throw if unable to construct
     return;
   },
   dsFilterProcessor(ds: WasmDatasource): boolean {

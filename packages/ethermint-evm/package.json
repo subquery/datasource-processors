@@ -8,7 +8,7 @@
   "scripts": {
     "test": "jest",
     "build:ts": "tsc -b",
-    "build:bundle": "esbuild src/index.ts --platform=node --bundle --format=cjs --minify --outfile=dist/bundle.js",
+    "build:bundle": "esbuild src/index.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
     "build": "yarn build:ts && yarn build:bundle"
   },
   "dependencies": {

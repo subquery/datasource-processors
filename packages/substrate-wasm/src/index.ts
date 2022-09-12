@@ -285,7 +285,10 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   WasmDatasource
 > = {
   specVersion: '1.0.0',
-  baseFilter: [{module: 'contracts', method: 'ContractEmitted'}], // TODO executed failed
+  baseFilter: [
+    {module: 'contracts', method: 'ContractEmitted'},
+    {module: 'contracts', method: 'ContractExecution'},
+  ], // ContractEmitted -> Shiden, ContractExecution-> Edegeware
   baseHandlerKind: SubstrateHandlerKind.Event,
 
   // eslint-disable-next-line @typescript-eslint/require-await

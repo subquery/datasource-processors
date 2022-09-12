@@ -1,6 +1,6 @@
 {
   "name": "@subql/substrate-wasm-processor",
-  "version": "0.0.1-5",
+  "version": "0.0.1-6",
   "description": "SubQuery datasource processor for Substrate Wasm",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
@@ -28,5 +28,5 @@
   "resolutions": {
     "@subql/types": "1.4.1-0"
   },
-  "stableVersion": "0.0.1-4"
+  "stableVersion": "0.0.1-5"
 }

@@ -2931,7 +2931,7 @@ __metadata:
   resolution: "@subql/substrate-wasm-processor@workspace:packages/substrate-wasm"
   dependencies:
     "@polkadot/api-contract": ^9.2.4
-    "@subql/types": 1.4.1-1
+    "@subql/types": 1.4.1-0
     "@types/lodash": ^4.14.182
     class-transformer: ^0.5.1
     class-validator: ^0.13.2
@@ -2954,12 +2954,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@subql/types@npm:1.4.1-1":
-  version: 1.4.1-1
-  resolution: "@subql/types@npm:1.4.1-1"
+"@subql/types@npm:1.4.1-0":
+  version: 1.4.1-0
+  resolution: "@subql/types@npm:1.4.1-0"
   peerDependencies:
     "@polkadot/api": ^9
-  checksum: 26602f2c139ca62cb5d5b68ba8b732a7295e383033bc0bd76db6830e57adcb6b1e7c9f89a1f619389bd8729737f54e23c5fc8d64ece85771c58ca3ddebd3ad4c
+  checksum: 31343703d70c1e3f07391bd6521d4477be389ae84ff3f7ca7534635474bd43942023c43211f55b671ec67a4e308ad7650d70229e67a05b85ebee7cb177fb412b
   languageName: node
   linkType: hard
 

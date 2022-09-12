@@ -27,11 +27,7 @@ import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
 import {Option} from '@polkadot/types-codec';
 import {DictionaryQueryEntry} from '@subql/types/dist/project';
 
-type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance] & {
-  from: Option<AccountId>;
-  to: Option<AccountId>;
-  value: Balance;
-};
+type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
 
 (global as any).logger = new Logger({
   level: 'debug',
@@ -122,7 +118,7 @@ describe('WasmDS', () => {
         },
       } = events[7];
       const decoded = decodeEvent(data as Bytes, erc20Abi);
-      console.log(decoded?.event);
+      console.log(decoded?.event.args);
       expect(decoded?.event.identifier).toBe('Transfer');
     });
   });
@@ -231,7 +227,9 @@ describe('WasmDS', () => {
         expect(event.from).toBe('av9BM7KemzinhqPvqHePZMDCLbw28iL2c2bZVeyj3XAa5T6');
         expect(event.contract.toString()).toBe('a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H');
         expect(event.identifier).toBe('Transfer');
-        console.log(event.args);
+        if (event.args) {
+          console.log(event.args[2].toHuman());
+        }
       });
     });
 

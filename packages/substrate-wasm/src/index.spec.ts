@@ -20,7 +20,7 @@ import WasmDatasourcePlugin, {
 } from './index';
 
 import {fetchBlock} from '../../../test/helpers';
-import {Bytes} from '@polkadot/types';
+import {Bytes, u8, Vec} from '@polkadot/types';
 import path from 'path';
 
 import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
@@ -463,8 +463,8 @@ describe('WasmDS', () => {
 
       it('get call selector from data', () => {
         //arg 4 is call data
-        const data = extrinsic.extrinsic.args[4];
-        expect(getSelector(data.toU8a())).toBe('0x633aa551');
+        const data = extrinsic.extrinsic.args[4] as Vec<u8>;
+        expect(getSelector(data)).toBe('0x633aa551');
       });
 
       it('covert method to selector', async () => {

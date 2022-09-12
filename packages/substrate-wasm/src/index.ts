@@ -271,10 +271,15 @@ export function methodToSelector(method: string, ds: WasmDatasource): string | u
   }
   return methodSelectors[method];
 }
-export function getSelector(data: Uint8Array): string {
+export function getSelector(data: Vec<u8>): string {
   //This should align with https://github.com/polkadot-js/api/blob/0b6f7861080c920407a346e2a3dbe64adcb07a1e/packages/api-contract/src/Abi/index.ts#L249
-  const [, trimmed] = compactStripLength(data);
-  return u8aToHex(trimmed.subarray(0, 4));
+  try {
+    const [, trimmed] = compactStripLength(data.toU8a());
+    return u8aToHex(trimmed.subarray(0, 4));
+  } catch (e) {
+    // if data is in proxy, it will throw error as u8atoU8a resolve different array
+    return data.toHex().slice(0, 10);
+  }
 }
 
 const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
@@ -414,7 +419,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       // if unable to decode, return as string
       data: decodedMessage ? {args: decodedMessage?.args, message: decodedMessage.message} : data.toHex(),
       success,
-      selector: getSelector(data.toU8a()),
+      selector: getSelector(data),
       // Transaction response properties
       hash: original.extrinsic.hash.toHex(), // Substrate extrinsic hash
       blockNumber: original.block.block.header.number.toNumber(),
@@ -449,7 +454,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       } catch (e) {
         //If unable to decode use abi, ty to use getSelector method to filter
         if (filter?.selector) {
-          return filter.selector === getSelector(data.toU8a());
+          return filter.selector === getSelector(data);
         }
       }
       return true;

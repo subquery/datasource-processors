@@ -86,8 +86,8 @@ const dsFlip = {
 } as unknown as WasmDatasource;
 
 const assets = {
-  [ERC20_PATH]: fs.readFileSync(ERC20_PATH).toString('utf8'),
-  [FLIP_PATH]: fs.readFileSync(FLIP_PATH).toString('utf8'),
+  erc20: fs.readFileSync(ERC20_PATH).toString('utf8'),
+  flip: fs.readFileSync(FLIP_PATH).toString('utf8'),
 };
 
 describe('WasmDS', () => {

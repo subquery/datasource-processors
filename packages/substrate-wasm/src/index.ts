@@ -168,19 +168,18 @@ export function getDsAssets(ds: WasmDatasource, assets?: Record<string, string>)
   if (!abi) {
     throw new Error(`Datasource processor options doesn't specify an abi`);
   }
-  const assetFile = ds.assets?.get(abi);
-  if (!assetFile) {
+  if (!ds.assets?.get(abi)) {
     throw new Error(`Abi named "${abi}" not referenced in assets`);
   }
 
-  if (!dsAssets[assetFile.file]) {
+  if (!dsAssets[abi]) {
     if (!assets) {
       throw new Error(`Unable to load Abi asset for ${abi}`);
     }
-    dsAssets[assetFile.file] = assets[assetFile.file];
+    dsAssets[abi] = assets[abi];
   }
 
-  return dsAssets[assetFile.file];
+  return dsAssets[abi];
 }
 
 export function buildAbi(ds: WasmDatasource, assets?: Record<string, string> | undefined): Abi | undefined {

@@ -21,7 +21,6 @@ import {stringNormalizedEq, isCustomDs} from './utils';
 import {Abi} from '@polkadot/api-contract';
 import {AbiMessage, DecodedEvent, DecodedMessage} from '@polkadot/api-contract/types';
 import {AccountId} from '@polkadot/types/interfaces';
-import fs from 'fs';
 import {compactStripLength, u8aToHex} from '@polkadot/util';
 const EMPTY_ADDRESS = '0x0000000000000000000000000000000000000000';
 
@@ -163,28 +162,28 @@ let decodedMessage: Record<string, DecodedMessage> = {};
 //get identifier index from abi json, in order construct dictionary query
 const eventIndexes: Record<string, number> = {};
 const methodSelectors: Record<string, string> = {};
-export function getDsAssets(ds: WasmDatasource, abi: string): string {
-  if (!isCustomDs(ds)) {
-    throw new Error(`data source is not a custom data source`);
+
+export function getDsAssets(ds: WasmDatasource, assets?: Record<string, string>): string {
+  const abi = ds.processor?.options?.abi;
+  if (!abi) {
+    throw new Error(`Datasource processor options doesn't specify an abi`);
   }
   const assetFile = ds.assets?.get(abi);
   if (!assetFile) {
     throw new Error(`Abi named "${abi}" not referenced in assets`);
   }
-  if (!dsAssets[abi]) {
-    try {
-      // console.log(`read asset from file once`)
-      dsAssets[abi] = fs.readFileSync(assetFile.file, {
-        encoding: 'utf8',
-      });
-    } catch (e) {
-      console.error(`Failed to load datasource asset ${assetFile.file}`);
-      throw e;
+
+  if (!dsAssets[assetFile.file]) {
+    if (!assets) {
+      throw new Error(`Unable to load Abi asset for ${abi}`);
     }
+    dsAssets[assetFile.file] = assets[assetFile.file];
   }
-  return dsAssets[abi];
+
+  return dsAssets[assetFile.file];
 }
-export function buildAbi(ds: WasmDatasource): Abi | undefined {
+
+export function buildAbi(ds: WasmDatasource, assets?: Record<string, string> | undefined): Abi | undefined {
   const abi = ds.processor?.options?.abi;
   if (!abi || !ds.assets) {
     return;
@@ -193,7 +192,11 @@ export function buildAbi(ds: WasmDatasource): Abi | undefined {
   if (!contractAbis[abi]) {
     // Constructing the interface validates the ABI
     try {
-      const asset = getDsAssets(ds, abi);
+      const asset = getDsAssets(ds, assets);
+
+      if (!asset) {
+        throw new Error(`Abi ${abi} not found`);
+      }
       const abiObj = JSON.parse(asset);
       contractAbis[abi] = new Abi(abiObj);
     } catch (e) {
@@ -203,6 +206,7 @@ export function buildAbi(ds: WasmDatasource): Abi | undefined {
   }
   return contractAbis[abi];
 }
+
 export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
   if (decodedEvent[data.toString()]) {
     return decodedEvent[data.toString()];
@@ -216,6 +220,7 @@ export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
   }
   return decodedEvent[data.toString()];
 }
+
 export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
   if (decodedMessage[data.toString()]) {
     return decodedMessage[data.toString()];
@@ -229,6 +234,7 @@ export function decodeMessage(data: Uint8Array, iAbi?: Abi): DecodedMessage {
   }
   return decodedMessage[data.toString()];
 }
+
 export function getEventIndex(identifier: string, ds: WasmDatasource): number | undefined {
   if (eventIndexes[identifier]) {
     return eventIndexes[identifier];
@@ -237,8 +243,9 @@ export function getEventIndex(identifier: string, ds: WasmDatasource): number | 
     if (!abi) {
       throw new Error(`Abi must be provided to get event index`);
     }
-    const asset = getDsAssets(ds, abi);
-    const abiObj = JSON.parse(asset) as unknown as JSONAbi;
+    const asset = getDsAssets(ds);
+
+    const abiObj = JSON.parse(asset) as JSONAbi;
     const eventIndex = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.events.findIndex(
       (event) => event.label === identifier
     );
@@ -258,7 +265,7 @@ export function methodToSelector(method: string, ds: WasmDatasource): string | u
     if (!abi) {
       throw new Error(`Abi must be provided to find message and its selector`);
     }
-    const asset = getDsAssets(ds, abi);
+    const asset = getDsAssets(ds);
     const abiObj = JSON.parse(asset) as unknown as JSONAbi;
     const message = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.messages.find(
       (message) => message.label === method
@@ -297,12 +304,12 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   baseHandlerKind: SubstrateHandlerKind.Event,
 
   // eslint-disable-next-line @typescript-eslint/require-await
-  async transformer({ds, filter, input: original}): Promise<WasmEvent[]> {
+  async transformer({ds, input: original, assets}): Promise<WasmEvent[]> {
     const from = original.extrinsic ? original.extrinsic.extrinsic.signer.toString() : EMPTY_ADDRESS;
     const [contract, data] = original.event.data;
     let decodedData: DecodedEvent | undefined;
     try {
-      const iAbi = buildAbi(ds);
+      const iAbi = buildAbi(ds, assets);
       decodedData = decodeEvent(data, iAbi);
       if (decodedData === undefined) {
         (global as any).logger?.warn(
@@ -394,7 +401,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
   baseFilter: [{module: 'contracts', method: 'call'}],
   baseHandlerKind: SubstrateHandlerKind.Call,
   // eslint-disable-next-line @typescript-eslint/require-await
-  async transformer({ds, input: original}): Promise<[WasmCall]> {
+  async transformer({ds, input: original, assets}): Promise<[WasmCall]> {
     const [dest, value, gasLimit, storageDepositLimit, data] = original.extrinsic.method.args;
 
     const success = !original.events.find(
@@ -402,7 +409,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     );
     let decodedMessage: DecodedMessage | undefined;
     try {
-      const iAbi = buildAbi(ds);
+      const iAbi = buildAbi(ds, assets);
       decodedMessage = decodeMessage(data.toU8a(), iAbi);
     } catch (e) {
       // TODO setup ts config with global defs
@@ -524,7 +531,10 @@ export const WasmDatasourcePlugin = <
         throw new Error(`Invalid Wasm call filter.\n${errorMsgs}`);
       }
     }
-    buildAbi(ds); // Will throw if unable to construct
+
+    // Loads the assets into memory
+    // Will throw if unable to construct
+    buildAbi(ds, assets);
     return;
   },
   dsFilterProcessor(ds: WasmDatasource): boolean {

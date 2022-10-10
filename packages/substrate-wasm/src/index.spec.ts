@@ -1,6 +1,7 @@
 // Copyright 2020-2021 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
+import fs from 'fs';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {Logger} from '@subql/utils';
 import {SubstrateEvent, SubstrateExtrinsic} from '@subql/types';
@@ -35,6 +36,10 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
   nestedKey: 'payload',
 }).getLogger('WasmTests');
 
+const SHIBUYA_ENDPOINT = 'wss://public-rpc.pinknode.io/shibuya';
+const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
+const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
+
 const baseDS: WasmDatasource = {
   kind: 'substrate/Wasm',
   processor: {
@@ -44,7 +49,7 @@ const baseDS: WasmDatasource = {
       contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
     },
   },
-  assets: new Map([['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}]]),
+  assets: new Map([['erc20', {file: ERC20_PATH}]]),
   mapping: {
     file: '',
     handlers: [
@@ -57,8 +62,6 @@ const baseDS: WasmDatasource = {
   },
 };
 
-const SHIBUYA_ENDPOINT = 'wss://public-rpc.pinknode.io/shibuya';
-
 const dsTransfer = {
   kind: 'substrate/Wasm',
   processor: {
@@ -68,7 +71,7 @@ const dsTransfer = {
       contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
     },
   },
-  assets: new Map([['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}]]),
+  assets: new Map([['erc20', {file: ERC20_PATH}]]),
 } as unknown as WasmDatasource;
 const dsFlip = {
   kind: 'substrate/Wasm',
@@ -79,8 +82,13 @@ const dsFlip = {
       contract: 'Yi7XDNj695kuHY9ZmtH4YWeBrwTFWo6YMi4YnLstvjUVVfK',
     },
   },
-  assets: new Map([['flip', {file: path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json')}]]),
+  assets: new Map([['flip', {file: FLIP_PATH}]]),
 } as unknown as WasmDatasource;
+
+const assets = {
+  [ERC20_PATH]: fs.readFileSync(ERC20_PATH).toString('utf8'),
+  [FLIP_PATH]: fs.readFileSync(FLIP_PATH).toString('utf8'),
+};
 
 describe('WasmDS', () => {
   jest.setTimeout(500000);
@@ -102,14 +110,13 @@ describe('WasmDS', () => {
 
   describe('basic decode', () => {
     it('decode message', async function () {
-      const flipAbi = await buildAbi(dsFlip);
+      const flipAbi = buildAbi(dsFlip, assets);
       const blockNumber = 2105713;
       const {extrinsics} = await fetchBlock(api, blockNumber);
       const decoded = decodeMessage(extrinsics[2].extrinsic.args[4].toU8a(), flipAbi);
-      console.log(decoded);
     });
     it('decode event', async function () {
-      const erc20Abi = await buildAbi(dsTransfer);
+      const erc20Abi = buildAbi(dsTransfer, assets);
       const blockNumber = 2135058;
       const {events} = await fetchBlock(api, blockNumber);
       const {
@@ -118,7 +125,6 @@ describe('WasmDS', () => {
         },
       } = events[7];
       const decoded = decodeEvent(data as Bytes, erc20Abi);
-      console.log(decoded?.event.args);
       expect(decoded?.event.identifier).toBe('Transfer');
     });
   });
@@ -142,9 +148,7 @@ describe('WasmDS', () => {
             contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
           },
         },
-        assets: new Map([
-          ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
-        ]),
+        assets: new Map([['erc20', {file: ERC20_PATH}]]),
         mapping: {
           handlers: [
             {
@@ -154,6 +158,9 @@ describe('WasmDS', () => {
           ],
         },
       } as unknown as WasmDatasource;
+
+      // Used to load the ABIs
+      WasmDatasourcePlugin.validate(ds, assets);
     });
 
     describe('Filtering', () => {
@@ -174,9 +181,7 @@ describe('WasmDS', () => {
             input: event,
             ds: {
               processor: {options: {contract: '0x0000000000000000000000000000000000000000'}},
-              assets: new Map([
-                ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
-              ]),
+              assets: new Map([['erc20', {file: ERC20_PATH}]]),
             } as WasmDatasource,
           })
         ).toBeFalsy();
@@ -227,9 +232,6 @@ describe('WasmDS', () => {
         expect(event.from).toBe('av9BM7KemzinhqPvqHePZMDCLbw28iL2c2bZVeyj3XAa5T6');
         expect(event.contract.toString()).toBe('a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H');
         expect(event.identifier).toBe('Transfer');
-        if (event.args) {
-          console.log(event.args[2].toHuman());
-        }
       });
     });
 
@@ -271,6 +273,7 @@ describe('WasmDS', () => {
       const blockNumber = 2105713;
       const {extrinsics} = await fetchBlock(api, blockNumber);
       extrinsic = extrinsics[2] as SubstrateExtrinsic<ContractCallArgs>;
+
       ds = {
         kind: 'substrate/Wasm',
         processor: {
@@ -280,10 +283,11 @@ describe('WasmDS', () => {
             contract: 'Yi7XDNj695kuHY9ZmtH4YWeBrwTFWo6YMi4YnLstvjUVVfK',
           },
         },
-        assets: new Map([
-          ['flip', {file: path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json')}],
-        ]),
+        assets: new Map([['flip', {file: FLIP_PATH}]]),
       } as unknown as WasmDatasource;
+
+      // Used to load the ABIs
+      WasmDatasourcePlugin.validate(ds, assets);
     });
 
     describe('Filtering', () => {
@@ -401,13 +405,8 @@ describe('WasmDS', () => {
   });
 
   describe('dictionary query', () => {
-    let extrinsic: SubstrateExtrinsic;
-
     describe('event query', () => {
       it('get event index from abi json by identifier name', async () => {
-        const blockNumber = 2135058;
-        const {extrinsics} = await fetchBlock(api, blockNumber);
-        extrinsic = extrinsics[7];
         const ds = {
           kind: 'substrate/Wasm',
           processor: {
@@ -417,9 +416,7 @@ describe('WasmDS', () => {
               contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
             },
           },
-          assets: new Map([
-            ['erc20', {file: path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json')}],
-          ]),
+          assets: new Map([['erc20', {file: ERC20_PATH}]]),
           mapping: {
             handlers: [
               {
@@ -430,11 +427,9 @@ describe('WasmDS', () => {
           },
         } as unknown as WasmDatasource;
 
-        expect(await getEventIndex('Transfer', ds)).toBe(0);
-
-        expect(await getEventIndex('Approval', ds)).toBe(1);
-
-        expect(await getEventIndex('Removal', ds)).toBeUndefined();
+        expect(getEventIndex('Transfer', ds)).toBe(0);
+        expect(getEventIndex('Approval', ds)).toBe(1);
+        expect(getEventIndex('Removal', ds)).toBeUndefined();
       });
     });
 
@@ -455,10 +450,11 @@ describe('WasmDS', () => {
               contract: 'Yi7XDNj695kuHY9ZmtH4YWeBrwTFWo6YMi4YnLstvjUVVfK',
             },
           },
-          assets: new Map([
-            ['flip', {file: path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json')}],
-          ]),
+          assets: new Map([['flip', {file: FLIP_PATH}]]),
         } as unknown as WasmDatasource;
+
+        // Used to load the ABIs
+        WasmDatasourcePlugin.validate(ds, assets);
       });
 
       it('get call selector from data', () => {
@@ -468,8 +464,8 @@ describe('WasmDS', () => {
       });
 
       it('covert method to selector', async () => {
-        expect(await methodToSelector('flip', ds)).toBe('0x633aa551');
-        expect(await methodToSelector('undefined', ds)).toBeUndefined();
+        expect(methodToSelector('flip', ds)).toBe('0x633aa551');
+        expect(methodToSelector('undefined', ds)).toBeUndefined();
       });
 
       it('generate dictionary query with call filters selector', async () => {

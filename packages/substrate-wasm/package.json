@@ -1,6 +1,6 @@
 {
   "name": "@subql/substrate-wasm-processor",
-  "version": "0.1.2-0",
+  "version": "0.1.2",
   "description": "SubQuery datasource processor for Substrate Wasm",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
@@ -16,7 +16,7 @@
     "class-validator": "^0.13.2"
   },
   "devDependencies": {
-    "@subql/types": "1.4.1-0",
+    "@subql/types": "latest",
     "@types/lodash": "^4.14.182",
     "esbuild": "^0.15.5",
     "lodash": "^4.17.21",
@@ -24,9 +24,5 @@
   },
   "peerDependencies": {
     "@polkadot/api": "^9"
-  },
-  "resolutions": {
-    "@subql/types": "1.4.1-0"
-  },
-  "stableVersion": "0.1.1"
+  }
 }

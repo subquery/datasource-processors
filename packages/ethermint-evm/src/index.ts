@@ -20,6 +20,7 @@ import {
 import {hexDataSlice} from '@ethersproject/bytes';
 import {Log, TransactionResponse} from '@ethersproject/abstract-provider';
 import {Interface, Result} from '@ethersproject/abi';
+import {HashZero} from '@ethersproject/constants';
 import {BigNumber} from '@ethersproject/bignumber';
 import {eventToTopic, functionToSighash, hexStringEq, stringNormalizedEq} from './utils';
 import {plainToClass} from 'class-transformer';
@@ -197,7 +198,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         blockTimestamp: original.block.block.header.time,
       };
 
-      log.data = '0x' + Buffer.from(log.data, 'base64').toString('hex');
+      log.data = log.data ? '0x' + Buffer.from(log.data, 'base64').toString('hex') : HashZero;
 
       try {
         const iface = buildInterface(ds, assets);
@@ -361,7 +362,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
 
       return true;
     } catch (e) {
-      (global as any).logger.warn('Unable to properly filter input');
+      (global as any).logger.warn(e, 'Unable to properly filter input');
       return false;
     }
   },

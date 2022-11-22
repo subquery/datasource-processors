@@ -481,7 +481,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
   dictionaryQuery(filter: WasmCallFilter, ds: WasmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
-      entity: 'contractsCall',
+      entity: 'contractsCalls',
       conditions: [],
     };
     // contract <----> call.dest

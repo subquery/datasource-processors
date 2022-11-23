@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.3] - 2022-11-24
 ### Fixed
-- Fixed `contractsCalls` and `contractEmitteds'
+- Fixed building dictionary queries
 
 ## [0.1.2] - 2022-10-11
 ### Fixed

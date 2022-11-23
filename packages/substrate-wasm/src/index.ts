@@ -363,7 +363,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
   dictionaryQuery(filter: WasmEventFilter, ds: WasmDatasource): DictionaryQueryEntry | undefined {
     const queryEntry: DictionaryQueryEntry = {
-      entity: 'contractEmitted',
+      entity: 'contractEmitteds',
       conditions: [],
     };
     if (ds.processor?.options?.contract) {

@@ -27,6 +27,7 @@ import path from 'path';
 import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
 import {Option} from '@polkadot/types-codec';
 import {DictionaryQueryEntry} from '@subql/types/dist/project';
+import axios from 'axios';
 
 type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
 
@@ -39,6 +40,7 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
 const SHIBUYA_ENDPOINT = 'wss://public-rpc.pinknode.io/shibuya';
 const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
 const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
+const DICTIONARY_URL = 'https://api.subquery.network/sq/subquery/shiden-dictionary';
 
 const baseDS: WasmDatasource = {
   kind: 'substrate/Wasm',
@@ -164,6 +166,24 @@ describe('WasmDS', () => {
     });
 
     describe('Filtering', () => {
+      it('check query entity for contractEmitteds', async () => {
+        const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmEvent'];
+        const query = processor.dictionaryQuery
+          ? await processor.dictionaryQuery(
+              {
+                contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+                identifier: 'Transfer',
+              },
+              ds
+            )
+          : undefined;
+
+        const response = await axios.post(DICTIONARY_URL, {
+          query: `query { ${query?.entity} { nodes {eventIndex} } }`,
+          variables: null,
+        });
+        expect(response.status).toBe(200);
+      });
       it('filters matching contract address', async () => {
         // expect(
         //   processor.filterProcessor({
@@ -291,6 +311,34 @@ describe('WasmDS', () => {
     });
 
     describe('Filtering', () => {
+      it('check query entity for contractsCalls', async () => {
+        const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
+        ds = {
+          kind: 'substrate/Wasm',
+          processor: {
+            file: '',
+            options: {
+              abi: 'flip',
+              contract: 'Yi7XDNj695kuHY9ZmtH4YWeBrwTFWo6YMi4YnLstvjUVVfK',
+            },
+          },
+          assets: new Map([['flip', {file: FLIP_PATH}]]),
+        } as unknown as WasmDatasource;
+        const query = processor.dictionaryQuery
+          ? await processor.dictionaryQuery(
+              {
+                selector: '0x633aa551',
+              },
+              ds
+            )
+          : undefined;
+
+        const response = await axios.post(DICTIONARY_URL, {
+          query: `query { ${query?.entity} { nodes {selector} } }`,
+          variables: null,
+        });
+        expect(response.status).toBe(200);
+      });
       it('filters matching contract address', async () => {
         expect(
           await processor.filterProcessor({

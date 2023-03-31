@@ -99,6 +99,7 @@ export interface WasmEvent<T extends Result = Result> {
   args?: T | undefined;
   transactionHash: string;
   blockNumber: number;
+  blockEventIdx: number;
   blockHash: string;
   timestamp: Date;
 }
@@ -325,6 +326,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     return [
       {
         blockNumber: original.block.block.header.number.toNumber(),
+        blockEventIdx: original.idx,
         blockHash: original.block.block.header.hash.toHex(),
         transactionHash: original.hash.toString(),
         timestamp: original.block.timestamp,

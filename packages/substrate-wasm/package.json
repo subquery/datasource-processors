@@ -1,6 +1,6 @@
 {
   "name": "@subql/substrate-wasm-processor",
-  "version": "0.1.3",
+  "version": "0.1.4-0",
   "description": "SubQuery datasource processor for Substrate Wasm",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
@@ -25,5 +25,6 @@
   },
   "peerDependencies": {
     "@polkadot/api": "^9"
-  }
+  },
+  "stableVersion": "0.1.3"
 }

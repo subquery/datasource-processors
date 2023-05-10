@@ -320,7 +320,10 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       ? (tx as TransactionV2).asLegacy
       : (tx as EthTransaction);
 
-    let from, hash, to, success;
+    let from = '',
+      hash = '',
+      to,
+      success;
     try {
       const executionEvent = getExecutionEvent(original);
       from = executionEvent.from;
@@ -328,9 +331,12 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       hash = executionEvent.hash;
       success = executionEvent.status.isSucceed;
     } catch (e) {
+      logger.warn(
+        `Unable to get executionEvent for call. block='${original.block.block.header.number.toNumber()}', index='${
+          original.idx
+        }'`
+      );
       success = false;
-
-      throw new Error('Unable to get executionEvent for transaction');
     }
 
     let call: FrontierEvmCall;

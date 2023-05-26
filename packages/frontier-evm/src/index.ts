@@ -327,7 +327,10 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     try {
       const executionEvent = getExecutionEvent(original);
       from = executionEvent.from;
-      to = executionEvent.to;
+      // There is no test for tx being of type EthTransaction
+      if (!(rawTx as EIP1559Transaction).action || !(rawTx as EIP1559Transaction).action.isCreate) {
+        to = executionEvent.to;
+      }
       hash = executionEvent.hash;
       success = executionEvent.status.isSucceed;
     } catch (e) {

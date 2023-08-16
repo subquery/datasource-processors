@@ -4,14 +4,14 @@
   "description": "SubQuery datasource processor for Substrate Wasm",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "build:ts": "tsc -b",
     "build:bundle": "esbuild src/index.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
     "build": "yarn build:ts && yarn build:bundle"
   },
   "dependencies": {
-    "@polkadot/api-contract": "^9.2.4",
+    "@polkadot/api-contract": "^10.9.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2"
   },
@@ -24,7 +24,7 @@
     "typescript": "^4.6.4"
   },
   "peerDependencies": {
-    "@polkadot/api": "^9"
+    "@polkadot/api": "^10.9.1"
   },
   "stableVersion": "0.1.3"
 }

@@ -1,5 +1,5 @@
-// Copyright 2020-2021 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import fs from 'fs';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -40,6 +40,8 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
 const SHIBUYA_ENDPOINT = 'wss://public-rpc.pinknode.io/shibuya';
 const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
 const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
+const MULTISIG_FACTORY_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/multisig_factory.json');
+
 const DICTIONARY_URL = 'https://api.subquery.network/sq/subquery/shiden-dictionary';
 
 const baseDS: WasmDatasource = {
@@ -87,9 +89,22 @@ const dsFlip = {
   assets: new Map([['flip', {file: FLIP_PATH}]]),
 } as unknown as WasmDatasource;
 
+const dsMultiSigFactory = {
+  kind: 'substrate/Wasm',
+  processor: {
+    file: '',
+    options: {
+      abi: 'multisig_factory',
+      contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC',
+    },
+  },
+  assets: new Map([['flip', {file: MULTISIG_FACTORY_PATH}]]),
+} as unknown as WasmDatasource;
+
 const assets = {
   erc20: fs.readFileSync(ERC20_PATH).toString('utf8'),
   flip: fs.readFileSync(FLIP_PATH).toString('utf8'),
+  multisig_factory: fs.readFileSync(MULTISIG_FACTORY_PATH).toString('utf8'),
 };
 
 describe('WasmDS', () => {
@@ -549,6 +564,64 @@ describe('WasmDS', () => {
           : undefined;
         expect(query?.conditions[1].field).toBe('selector');
         expect(query?.conditions[1].value).toBe('0x633aa551');
+      });
+    });
+  });
+});
+
+describe('Wasm V4', () => {
+  jest.setTimeout(500000);
+
+  let api: ApiPromise;
+
+  beforeAll(async () => {
+    api = await ApiPromise.create({
+      provider: new WsProvider('wss://rococo-contracts-rpc.polkadot.io'),
+      noInitWarn: true,
+    });
+  });
+
+  afterAll(async () => {
+    delete (global as any).logger;
+    await api?.disconnect();
+  }, 500000);
+
+  describe('dictionary query', () => {
+    describe('event query', () => {
+      it('generate dictionary query with call filters method', async () => {
+        const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmEvent'];
+        const ds = {
+          kind: 'substrate/Wasm',
+          processor: {
+            file: '',
+            options: {
+              abi: 'multisig_factory',
+              contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC',
+            },
+          },
+          assets: new Map([['multisig_factory', {file: MULTISIG_FACTORY_PATH}]]),
+          mapping: {
+            handlers: [
+              {
+                handler: 'handleSubstrateWasmEvent',
+                kind: 'substrate/WasmEvent',
+              },
+            ],
+          },
+        } as unknown as WasmDatasource;
+        WasmDatasourcePlugin.validate(ds, assets);
+
+        const query = processor.dictionaryQuery
+          ? await processor.dictionaryQuery(
+              {contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC', identifier: 'NewMultisig'},
+              ds
+            )
+          : undefined;
+        expect(query?.entity).toBe('contractEmitteds');
+        expect(query?.conditions).toStrictEqual([
+          {field: 'contract', value: '5hrfjo4tkylu2dh8pmatyu5ynmr94ulv9gyznrhpscbiecac'},
+          {field: 'eventIndex', value: '0'},
+        ]);
       });
     });
   });

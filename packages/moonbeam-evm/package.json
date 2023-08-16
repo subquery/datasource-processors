@@ -4,7 +4,7 @@
   "description": "SubQuery datasource processor for Moonbeam EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "build:ts": "tsc -b",
     "build:bundle": "esbuild src/index.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
@@ -18,7 +18,7 @@
     "typescript": "^4.6.4"
   },
   "peerDependencies": {
-    "@polkadot/api": "^9"
+    "@polkadot/api": "^10"
   },
   "stableVersion": "0.1.2"
 }

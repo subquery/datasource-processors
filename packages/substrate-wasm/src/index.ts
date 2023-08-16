@@ -268,9 +268,9 @@ export function methodToSelector(method: string, ds: WasmDatasource): string | u
     }
     const asset = getDsAssets(ds);
     const abiObj = JSON.parse(asset) as unknown as JSONAbi;
-    const message = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.messages.find(
-      (message) => message.label === method
-    );
+    const message = (
+      isInkV4(abiObj) ? abiObj : abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi
+    ).spec.messages.find((message) => message.label === method);
     if (message !== undefined) {
       methodSelectors[method] = message.selector;
     } else {

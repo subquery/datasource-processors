@@ -4,7 +4,7 @@
   "description": "SubQuery datasource processor for Ethermint EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "test": "jest",
     "build:ts": "tsc -b",

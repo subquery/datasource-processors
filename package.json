@@ -4,7 +4,7 @@
   "description": "Datasource processors for SubQuery ",
   "repository": "git@github.com:subquery/datasource-processors.git",
   "author": "SubQuery Pte Limited.",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "private": true,
   "workspaces": [
     "packages/*"
@@ -20,7 +20,7 @@
     "@cosmjs/cosmwasm-stargate": "^0.28.11",
     "@cosmjs/stargate": "^0.28.11",
     "@octokit/request": "^6.2.1",
-    "@polkadot/api": "^9",
+    "@polkadot/api": "^10",
     "@types/jest": "^27.5.1",
     "@typescript-eslint/eslint-plugin": "^5.23.0",
     "@typescript-eslint/parser": "^5.23.0",
@@ -28,14 +28,14 @@
     "eslint": "^8.15.0",
     "husky": ">=6",
     "jest": "^28.1.0",
-    "lint-staged": ">=10",
+    "lint-staged": "^12.3.3",
     "prettier": "2.6.2",
     "ts-jest": "^28.0.2",
     "ts-node": "^10.7.0"
   },
   "resolutions": {
-    "@polkadot/types": "^9",
-    "@polkadot/types-codec": "^9"
+    "@polkadot/types": "^10",
+    "@polkadot/types-codec": "^10"
   },
   "packageManager": "yarn@3.1.1",
   "lint-staged": {

@@ -4,7 +4,7 @@
   "description": "SubQuery datasource processor for Frontier EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "build:ts": "tsc -b",
     "build:bundle": "esbuild src/bundle.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
@@ -20,7 +20,7 @@
   "devDependencies": {
     "@subql/utils": "latest",
     "esbuild": "^0.15.5",
-    "moonbeam-types-bundle": "^2.0.4",
+    "moonbeam-types-bundle": "^2.0.10",
     "typescript": "^4.6.4"
   },
   "peerDependencies": {

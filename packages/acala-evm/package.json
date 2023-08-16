@@ -4,7 +4,7 @@
   "description": "SubQuery datasource processor for Acala EVM+",
   "main": "dist/index.js",
   "author": "SubQuery Pte Limited",
-  "license": "Apache-2.0",
+  "license": "GPL-3.0",
   "scripts": {
     "build:ts": "tsc -b",
     "build:bundle": "esbuild src/bundle.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
@@ -25,6 +25,6 @@
     "typescript": "^4.6.4"
   },
   "peerDependencies": {
-    "@polkadot/api": "^9"
+    "@polkadot/api": "^10"
   }
 }

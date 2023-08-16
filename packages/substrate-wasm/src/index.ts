@@ -1,5 +1,5 @@
-// Copyright 2020-2021 OnFinality Limited authors & contributors
-// SPDX-License-Identifier: Apache-2.0
+// Copyright 2020-2023 SubQuery Pte Ltd authors & contributors
+// SPDX-License-Identifier: GPL-3.0
 
 import {Bytes, Option, Compact, u128, u8, Vec} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
@@ -17,7 +17,7 @@ import {
 } from '@subql/types';
 import {plainToClass} from 'class-transformer';
 import {IsOptional, validateSync, IsString} from 'class-validator';
-import {stringNormalizedEq, isCustomDs} from './utils';
+import {stringNormalizedEq} from './utils';
 import {Abi} from '@polkadot/api-contract';
 import {AbiMessage, DecodedEvent, DecodedMessage} from '@polkadot/api-contract/types';
 import {AccountId} from '@polkadot/types/interfaces';
@@ -60,6 +60,7 @@ interface JSONAbi {
   V4: {
     spec: SpecDef;
   };
+  version?: string;
 }
 
 export interface Result extends ReadonlyArray<any> {
@@ -246,9 +247,9 @@ export function getEventIndex(identifier: string, ds: WasmDatasource): number | 
     const asset = getDsAssets(ds);
 
     const abiObj = JSON.parse(asset) as JSONAbi;
-    const eventIndex = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.events.findIndex(
-      (event) => event.label === identifier
-    );
+    const eventIndex = (
+      isInkV4(abiObj) ? abiObj : abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi
+    ).spec.events.findIndex((event) => event.label === identifier);
     if (eventIndex > -1) {
       eventIndexes[identifier] = eventIndex;
     } else {
@@ -267,9 +268,9 @@ export function methodToSelector(method: string, ds: WasmDatasource): string | u
     }
     const asset = getDsAssets(ds);
     const abiObj = JSON.parse(asset) as unknown as JSONAbi;
-    const message = (abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi).spec.messages.find(
-      (message) => message.label === method
-    );
+    const message = (
+      isInkV4(abiObj) ? abiObj : abiObj.V4 || abiObj.V3 || abiObj.V2 || abiObj.V1 || abi
+    ).spec.messages.find((message) => message.label === method);
     if (message !== undefined) {
       methodSelectors[method] = message.selector;
     } else {
@@ -510,6 +511,11 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     return queryEntry;
   },
 };
+
+// To be match with https://use.ink/faq/migrating-from-ink-3-to-4/#version-field
+function isInkV4(abi: JSONAbi) {
+  return abi.version === '4';
+}
 
 export const WasmDatasourcePlugin = <
   SubstrateDatasourceProcessor<

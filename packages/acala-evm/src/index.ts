@@ -108,7 +108,7 @@ class AcalaCallFilterImpl implements AcalaEvmCallFilter {
 
 type ExecutionEvent = {
   from: string;
-  to?: string;
+  to?: string; // Undefined for contract creation
   logs?: unknown; // TODO Vec<EtheruemLog>
 };
 
@@ -127,7 +127,7 @@ function getExecutionEvent(extrinsic: SubstrateExtrinsic): ExecutionEvent {
 
   return {
     from: from.toHex(),
-    to: to.toHex(),
+    to: executionEvent.event.method === 'Created' ? undefined : to.toHex(),
     logs,
   };
 }

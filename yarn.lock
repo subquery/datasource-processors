@@ -2853,7 +2853,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@subql/types-core@npm:0.1.1":
+"@subql/types-core@npm:0.1.1, @subql/types-core@npm:^0.1.0":
   version: 0.1.1
   resolution: "@subql/types-core@npm:0.1.1"
   dependencies:
@@ -2863,13 +2863,14 @@ __metadata:
   linkType: hard
 
 "@subql/types-cosmos@npm:latest":
-  version: 2.2.1
-  resolution: "@subql/types-cosmos@npm:2.2.1"
+  version: 3.0.0
+  resolution: "@subql/types-cosmos@npm:3.0.0"
   dependencies:
     "@cosmjs/cosmwasm-stargate": ^0.30.1
     "@cosmjs/proto-signing": ^0.30.1
     "@cosmjs/stargate": ^0.30.1
-  checksum: d2eee0c844fc9c7653c5cbfc73c7303f25eb78d5354e99b6dcd3a1590e2e8c1f5d29b0fe158812a3dc5af5725c3e9e9f340af3486bfaf25315f7c6606140f5b1
+    "@subql/types-core": ^0.1.0
+  checksum: 577a1268bbe2228a140dbb6eaa31c56d596d7d9bec25adb9f1e03a6adbf5248f5351232523ec64a496914dfaf70d2e3e9016eea4adcd6a718def5e36731cf16c
   languageName: node
   linkType: hard
 
@@ -3903,9 +3904,9 @@ __metadata:
   linkType: hard
 
 "ci-info@npm:^3.2.0":
-  version: 3.8.0
-  resolution: "ci-info@npm:3.8.0"
-  checksum: d0a4d3160497cae54294974a7246202244fff031b0a6ea20dd57b10ec510aa17399c41a1b0982142c105f3255aff2173e5c0dd7302ee1b2f28ba3debda375098
+  version: 3.9.0
+  resolution: "ci-info@npm:3.9.0"
+  checksum: 6b19dc9b2966d1f8c2041a838217299718f15d6c4b63ae36e4674edd2bee48f780e94761286a56aa59eb305a85fbea4ddffb7630ec063e7ec7e7e5ad42549a87
   languageName: node
   linkType: hard
 
@@ -4072,7 +4073,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"convert-source-map@npm:^1.4.0, convert-source-map@npm:^1.6.0":
+"convert-source-map@npm:^1.4.0":
   version: 1.9.0
   resolution: "convert-source-map@npm:1.9.0"
   checksum: dc55a1f28ddd0e9485ef13565f8f756b342f9a46c4ae18b843fe3c30c675d058d6a4823eff86d472f187b176f0adf51ea7b69ea38be34be4a63cbbf91b0593c8
@@ -4330,9 +4331,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.535":
-  version: 1.4.540
-  resolution: "electron-to-chromium@npm:1.4.540"
-  checksum: 78a48690a5cca3f89544d4e33a11e3101adb0b220da64078f67e167b396cbcd85044853cb88a9453444796599fe157c190ca5ebd00e9daf668ed5a9df3d0bba8
+  version: 1.4.541
+  resolution: "electron-to-chromium@npm:1.4.541"
+  checksum: bae664088197c07130daaed5457a315762d1caf0229a43673f32db5b137ce0d6661320a83134f9f78fe14bcfb8dc51a33e9378205fb25354be0690522eaeed50
   languageName: node
   linkType: hard
 
@@ -8374,13 +8375,13 @@ __metadata:
   linkType: hard
 
 "v8-to-istanbul@npm:^9.0.1":
-  version: 9.1.0
-  resolution: "v8-to-istanbul@npm:9.1.0"
+  version: 9.1.2
+  resolution: "v8-to-istanbul@npm:9.1.2"
   dependencies:
     "@jridgewell/trace-mapping": ^0.3.12
     "@types/istanbul-lib-coverage": ^2.0.1
-    convert-source-map: ^1.6.0
-  checksum: 2069d59ee46cf8d83b4adfd8a5c1a90834caffa9f675e4360f1157ffc8578ef0f763c8f32d128334424159bb6b01f3876acd39cd13297b2769405a9da241f8d1
+    convert-source-map: ^2.0.0
+  checksum: b0aee7869fb4ea9415ca7887fb24cbaa59c2c9a811951a332470b47f52b012f2576c68d1529c53f055a4a0c2fd3dd47b62d1d804e5ac1194725da6423e68fa46
   languageName: node
   linkType: hard
 

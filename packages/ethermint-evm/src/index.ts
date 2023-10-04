@@ -282,7 +282,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
       value: original.msg.decodedMsg.data.value.toString(),
       blockNumber: original.block.block.header.height,
       blockHash: original.block.block.id,
-      timestamp: Math.round(Date.parse(original.block.block.header.time) / 1000),
+      timestamp: original.block.block.header.time.getDate(),
       gasLimit: original.msg.decodedMsg.data.gas,
       success: isSuccess(original.tx.tx.log ?? '', original.idx),
     };

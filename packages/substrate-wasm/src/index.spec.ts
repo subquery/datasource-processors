@@ -26,7 +26,7 @@ import path from 'path';
 
 import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
 import {Option} from '@polkadot/types-codec';
-import {DictionaryQueryEntry} from '@subql/types/dist/project';
+import {DictionaryQueryEntry} from '@subql/types-core';
 import axios from 'axios';
 
 type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];

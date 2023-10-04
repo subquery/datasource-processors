@@ -15,14 +15,13 @@ import {
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
   SubstrateHandlerKind,
-  SubstrateNetworkFilter,
   SubstrateEvent,
   SubstrateExtrinsic,
   SubstrateCustomHandler,
   SubstrateMapping,
-  DictionaryQueryEntry,
   SecondLayerHandlerProcessor_1_0_0,
 } from '@subql/types';
+import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
 import {
   IsOptional,
@@ -43,17 +42,34 @@ type TopicFilter = string | null | undefined;
 
 export type AcalaEvmDatasource = SubstrateCustomDatasource<
   'substrate/AcalaEvm',
-  SubstrateNetworkFilter,
   SubstrateMapping<SubstrateCustomHandler>,
   AcalaEvmProcessorOptions
 >;
 
-export interface AcalaEvmEventFilter extends SubstrateNetworkFilter {
+export interface AcalaEvmEventFilter extends Record<string, any> {
+  /**
+   * You can filter by the topics in a log.
+   * These can be an address, event signature, null, '!null' or undefined
+   * @example
+   * topics: ['Transfer(address, address, uint256)'],
+   * @example
+   * topics: ['Transfer(address, address, uint256)', undefined, '0x220866B1A2219f40e72f5c628B65D54268cA3A9D']
+   */
   topics?: [TopicFilter, TopicFilter?, TopicFilter?, TopicFilter?];
 }
 
-export interface AcalaEvmCallFilter extends SubstrateNetworkFilter {
+export interface AcalaEvmCallFilter extends Record<string, any> {
+  /**
+   * The address of sender of the transaction
+   * @example
+   * from: '0x220866B1A2219f40e72f5c628B65D54268cA3A9D',
+   * */
   from?: string;
+  /**
+   * The function sighash or function signature of the call. This is the first 32bytes of the data field
+   * @example
+   * function: 'setminimumStakingAmount(uint256 amount)',
+   * */
   function?: string;
 }
 
@@ -83,9 +99,20 @@ export class TopicFilterValidator implements ValidatorConstraintInterface {
 }
 
 class AcalaEvmProcessorOptions {
+  /**
+   * The name of the abi that is provided in the assets
+   * This is the abi that will be used to decode transaction or log arguments
+   * @example
+   * abi: 'erc20',
+   * */
   @IsOptional()
   @IsString()
   abi?: string;
+  /**
+   * The specific contract that this datasource should filter.
+   * @example
+   * address: '0x220866B1A2219f40e72f5c628B65D54268cA3A9D',
+   * */
   @IsOptional()
   @IsEthereumAddress()
   address?: string;
@@ -210,18 +237,20 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   baseHandlerKind: SubstrateHandlerKind.Event,
   // eslint-disable-next-line @typescript-eslint/require-await
   async transformer({assets, ds, filter, input: original}): Promise<AcalaEvmEvent[]> {
+    const input = original as SubstrateEvent;
+
     // Acala EVM has all the logs in one substrate event, we need to process all the matching events.
-    const partialLogs = findLogs(ds.processor?.options?.address, filter, original);
-    const from = original.extrinsic ? getExecutionEvent(original.extrinsic).from : EMPTY_ADDRESS;
+    const partialLogs = findLogs(ds.processor?.options?.address, filter, input);
+    const from = input.extrinsic ? getExecutionEvent(input.extrinsic).from : EMPTY_ADDRESS;
 
     return partialLogs.map((partialLog) => {
       const log: AcalaEvmEvent = {
         ...partialLog,
-        blockNumber: original.block.block.header.number.toNumber(),
-        blockHash: original.block.hash.toHex(),
-        blockTimestamp: original.block.timestamp,
-        transactionIndex: original.extrinsic?.idx ?? -1,
-        transactionHash: original.extrinsic?.extrinsic.hash.toHex() ?? DUMMY_TX_HASH,
+        blockNumber: input.block.block.header.number.toNumber(),
+        blockHash: input.block.hash.toHex(),
+        blockTimestamp: input.block.timestamp,
+        transactionIndex: input.extrinsic?.idx ?? -1,
+        transactionHash: input.extrinsic?.extrinsic.hash.toHex() ?? DUMMY_TX_HASH,
         from,
       };
 
@@ -240,7 +269,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     });
   },
   filterProcessor({ds, filter, input}): boolean {
-    if (!findLogs(ds.processor?.options?.address, filter, input).length) return false;
+    if (!findLogs(ds.processor?.options?.address, filter, input as SubstrateEvent).length) return false;
 
     return true;
   },
@@ -383,7 +412,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
 export const AcalaDatasourcePlugin = <
   SubstrateDatasourceProcessor<
     'substrate/AcalaEvm',
-    SubstrateNetworkFilter,
+    AcalaEvmEventFilter | AcalaEvmCallFilter,
     AcalaEvmDatasource,
     {
       'substrate/AcalaEvmEvent': typeof EventProcessor;

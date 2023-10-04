@@ -23,6 +23,7 @@ import type {EthLog, EthRichBlock, EthTransaction} from '@polkadot/types/interfa
 import type {Bytes} from '@polkadot/types';
 
 // Gets logger and api
+import '@subql/types-core/dist/global';
 import '@subql/types/dist/global';
 
 function ethTransactionToTransactionResponse(tx: EthTransaction): TransactionResponse {

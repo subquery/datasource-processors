@@ -37,7 +37,7 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
   nestedKey: 'payload',
 }).getLogger('WasmTests');
 
-const SHIBUYA_ENDPOINT = 'wss://public-rpc.pinknode.io/shibuya';
+const SHIBUYA_ENDPOINT = 'wss://rpc.shibuya.astar.network';
 const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
 const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
 const MULTISIG_FACTORY_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/multisig_factory.json');

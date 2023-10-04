@@ -12,14 +12,14 @@ import {
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
   SubstrateHandlerKind,
-  SubstrateNetworkFilter,
   SubstrateExtrinsic,
   SubstrateCustomHandler,
   SubstrateMapping,
-  DictionaryQueryEntry,
   SecondLayerHandlerProcessor_1_0_0,
   TypedEventRecord,
+  SubstrateEvent,
 } from '@subql/types';
+import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
 import {
   IsOptional,
@@ -41,17 +41,34 @@ type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
 export type FrontierEvmDatasource = SubstrateCustomDatasource<
   'substrate/FrontierEvm',
-  SubstrateNetworkFilter,
   SubstrateMapping<SubstrateCustomHandler>,
   FrontierEvmProcessorOptions
 >;
 
-export interface FrontierEvmEventFilter extends SubstrateNetworkFilter {
+export interface FrontierEvmEventFilter extends Record<string, any> {
+  /**
+   * You can filter by the topics in a log.
+   * These can be an address, event signature, null, '!null' or undefined
+   * @example
+   * topics: ['Transfer(address, address, uint256)'],
+   * @example
+   * topics: ['Transfer(address, address, uint256)', undefined, '0x220866B1A2219f40e72f5c628B65D54268cA3A9D']
+   */
   topics?: [TopicFilter, TopicFilter?, TopicFilter?, TopicFilter?];
 }
 
-export interface FrontierEvmCallFilter extends SubstrateNetworkFilter {
+export interface FrontierEvmCallFilter extends Record<string, any> {
+  /**
+   * The address of sender of the transaction
+   * @example
+   * from: '0x220866B1A2219f40e72f5c628B65D54268cA3A9D',
+   * */
   from?: string;
+  /**
+   * The function sighash or function signature of the call. This is the first 32bytes of the data field
+   * @example
+   * function: 'setminimumStakingAmount(uint256 amount)',
+   * */
   function?: string;
 }
 
@@ -80,11 +97,23 @@ class TopicFilterValidator implements ValidatorConstraintInterface {
 }
 
 export class FrontierEvmProcessorOptions {
+  /**
+   * The name of the abi that is provided in the assets
+   * This is the abi that will be used to decode transaction or log arguments
+   * @example
+   * abi: 'erc20',
+   * */
   @IsOptional()
   @IsString()
   abi?: string;
   @IsOptional()
   @IsEthereumAddress()
+  /**
+   * The specific contract that this datasource should filter.
+   * Alternatively this can be left blank and a transaction to filter can be used instead
+   * @example
+   * address: '0x220866B1A2219f40e72f5c628B65D54268cA3A9D',
+   * */
   address?: string;
 }
 
@@ -195,11 +224,13 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   async transformer({api, assets, ds, input: original}): Promise<[FrontierEvmEvent]> {
     const [eventData] = original.event.data;
 
+    const {extrinsic, block} = original as SubstrateEvent<[EvmLog]>;
+
     const baseFilter = Array.isArray(EventProcessor.baseFilter)
       ? EventProcessor.baseFilter
       : [EventProcessor.baseFilter];
     const evmEvents =
-      original.extrinsic?.events.filter((evt) =>
+      extrinsic?.events.filter((evt) =>
         baseFilter.find((filter) => filter.module === evt.event.section && filter.method === evt.event.method)
       ) ?? ([] as TypedEventRecord<EvmLog[]>[]);
 
@@ -207,14 +238,14 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
      * Example with no extrinsic https://rata.uncoverexplorer.com/block/3450156
      * Would possibly happen with utils.batch/utils.batchAll as well
      */
-    const {hash} = original.extrinsic ? getExecutionEvent(original.extrinsic) : {hash: undefined};
+    const {hash} = extrinsic ? getExecutionEvent(extrinsic) : {hash: undefined};
 
     const log: FrontierEvmEvent = {
       ...(eventData.toJSON() as unknown as RawEvent),
       blockNumber: original.block.block.header.number.toNumber(),
       blockHash: await getEtheruemBlockHash(api, original.block.block.header.number.toNumber()),
-      blockTimestamp: original.block.timestamp,
-      transactionIndex: original.extrinsic?.idx ?? -1,
+      blockTimestamp: block.timestamp,
+      transactionIndex: extrinsic?.idx ?? -1,
       transactionHash: hash,
       removed: false,
       logIndex: evmEvents.indexOf(original),
@@ -499,7 +530,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
 export const FrontierEvmDatasourcePlugin = <
   SubstrateDatasourceProcessor<
     'substrate/FrontierEvm',
-    SubstrateNetworkFilter,
+    FrontierEvmEventFilter | FrontierEvmCallFilter,
     FrontierEvmDatasource,
     {
       'substrate/FrontierEvmEvent': typeof EventProcessor;

@@ -10,7 +10,6 @@ import {
   SubstrateDatasourceProcessor,
   SubstrateHandlerKind,
   SubstrateMapping,
-  SubstrateNetworkFilter,
 } from '@subql/types';
 import FrontierEvmDatasourcePlugin, {
   FrontierEvmCall,
@@ -28,7 +27,6 @@ export type MoonbeamCallFilter = FrontierEvmCallFilter;
 
 export type MoonbeamDatasource = SubstrateCustomDatasource<
   'substrate/Moonbeam',
-  SubstrateNetworkFilter,
   SubstrateMapping<SubstrateCustomHandler>,
   FrontierEvmProcessorOptions
 >;
@@ -51,7 +49,7 @@ type MoonbeamCallSecondLayerHandlerProcessor = SecondLayerHandlerProcessor<
 
 export const MoonbeamDatasourcePlugin: SubstrateDatasourceProcessor<
   'substrate/Moonbeam',
-  SubstrateNetworkFilter,
+  MoonbeamEventFilter | MoonbeamCallFilter,
   MoonbeamDatasource
 > = {
   kind: 'substrate/Moonbeam',

@@ -3,6 +3,7 @@
 
 import type {AccountId, H256, BlockHash, CodeUploadRequest} from '@polkadot/types/interfaces';
 // Gets logger and api
+import '@subql/types-core/dist/global';
 import '@subql/types/dist/global';
 import {Bytes} from '@polkadot/types';
 import {ContractExecResult, ContractCallRequest} from '@polkadot/types/interfaces/contracts';

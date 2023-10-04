@@ -19,6 +19,7 @@ import {BigNumber, BigNumberish} from '@ethersproject/bignumber';
 import type {EthLog, EthRichBlock, EthTransaction} from '@polkadot/types/interfaces';
 
 // Gets logger and api
+import '@subql/types-core/dist/global';
 import '@subql/types/dist/global';
 
 function ethTransactionToTransactionResponse(tx: EthTransaction): TransactionResponse {

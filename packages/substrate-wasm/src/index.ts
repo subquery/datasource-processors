@@ -9,12 +9,12 @@ import {
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
   SubstrateHandlerKind,
-  SubstrateNetworkFilter,
   SubstrateCustomHandler,
   SubstrateMapping,
-  DictionaryQueryEntry,
   SecondLayerHandlerProcessor_1_0_0,
+  SubstrateEvent,
 } from '@subql/types';
+import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
 import {IsOptional, validateSync, IsString} from 'class-validator';
 import {stringNormalizedEq} from './utils';
@@ -69,21 +69,50 @@ export interface Result extends ReadonlyArray<any> {
 
 export type WasmDatasource = SubstrateCustomDatasource<
   'substrate/Wasm',
-  SubstrateNetworkFilter,
   SubstrateMapping<SubstrateCustomHandler>,
   WasmProcessorOptions
 >;
 
-export interface WasmEventFilter extends SubstrateNetworkFilter {
+export interface WasmEventFilter extends Record<string, any> {
+  /**
+   * The account that made the call
+   * @example
+   * from: 'bZ2uiFGTLcYyP8F88XzXa13xu5Mmp13VLiaW1gGn7rzxktc',
+   * */
   from?: string;
+  /**
+   * The contract the event was emitted from
+   * @example
+   * contract: 'bZ2uiFGTLcYyP8F88XzXa13xu5Mmp13VLiaW1gGn7rzxktc',
+   * */
   contract?: string;
+  /**
+   * The events identifier
+   * @example
+   * identifier: 'Transfer',
+   * */
   identifier?: IdentifierFilter;
 }
 
-export interface WasmCallFilter extends SubstrateNetworkFilter {
+export interface WasmCallFilter extends Record<string, any> {
   // dest?: string; //Filter in processor option contract
+  /**
+   * The account that made the call
+   * @example
+   * from: 'bZ2uiFGTLcYyP8F88XzXa13xu5Mmp13VLiaW1gGn7rzxktc',
+   * */
   from?: string;
+  /**
+   * The call selector
+   * @example
+   * selector: '0x681266a0',
+   * */
   selector?: string; //To u8a
+  /**
+   * The method of the call
+   * @example
+   * method: 'approve'
+   * */
   method?: string; // label
 }
 
@@ -121,9 +150,20 @@ export interface WasmCall<T extends Result = Result> {
 }
 
 class WasmProcessorOptions {
+  /**
+   * The name of the abi that is provided in the assets
+   * This is the abi that will be used to decode transaction or log arguments
+   * @example
+   * abi: 'erc20',
+   * */
   @IsOptional()
   abi?: string;
   @IsOptional()
+  /**
+   * The specific contract that this datasource should filter.
+   * @example
+   * contract: 'bZ2uiFGTLcYyP8F88XzXa13xu5Mmp13VLiaW1gGn7rzxktc',
+   * */
   contract?: string;
 }
 
@@ -306,7 +346,8 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
 
   // eslint-disable-next-line @typescript-eslint/require-await
   async transformer({ds, input: original, assets}): Promise<WasmEvent[]> {
-    const from = original.extrinsic ? original.extrinsic.extrinsic.signer.toString() : EMPTY_ADDRESS;
+    const {extrinsic, block} = original as SubstrateEvent<ContractEmittedResult>;
+    const from = extrinsic ? extrinsic.extrinsic.signer.toString() : EMPTY_ADDRESS;
     const [contract, data] = original.event.data;
     let decodedData: DecodedEvent | undefined;
     try {
@@ -330,7 +371,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         blockEventIdx: original.idx,
         blockHash: original.block.block.header.hash.toHex(),
         transactionHash: original.hash.toString(),
-        timestamp: original.block.timestamp,
+        timestamp: block.timestamp,
         from,
         contract: contract,
         //align with https://github.com/polkadot-js/api/blob/0b6f7861080c920407a346e2a3dbe64adcb07a1e/packages/api-contract/src/Abi/index.ts#L125
@@ -520,7 +561,7 @@ function isInkV4(abi: JSONAbi) {
 export const WasmDatasourcePlugin = <
   SubstrateDatasourceProcessor<
     'substrate/Wasm',
-    SubstrateNetworkFilter,
+    WasmEventFilter | WasmCallFilter,
     WasmDatasource,
     {
       'substrate/WasmEvent': typeof EventProcessor;

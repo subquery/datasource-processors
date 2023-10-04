@@ -17,8 +17,8 @@
   },
   "devDependencies": {
     "@actions/core": "^1.9.1",
-    "@cosmjs/cosmwasm-stargate": "^0.28.11",
-    "@cosmjs/stargate": "^0.28.11",
+    "@cosmjs/cosmwasm-stargate": "^0.30.1",
+    "@cosmjs/stargate": "^0.30.1",
     "@octokit/request": "^6.2.1",
     "@polkadot/api": "^10",
     "@types/jest": "^27.5.1",

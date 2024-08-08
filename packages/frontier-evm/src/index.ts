@@ -15,9 +15,9 @@ import {
   SubstrateExtrinsic,
   SubstrateCustomHandler,
   SubstrateMapping,
-  SecondLayerHandlerProcessor_1_0_0,
   TypedEventRecord,
   SubstrateEvent,
+  SecondLayerHandlerProcessor,
 } from '@subql/types';
 import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
@@ -211,11 +211,11 @@ function buildInterface(ds: FrontierEvmDatasource, assets?: Record<string, strin
   return contractInterfaces[abi];
 }
 
-const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
+const EventProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   FrontierEvmEventFilter,
   FrontierEvmEvent,
-  [EvmLog],
+  // [EvmLog],
   FrontierEvmDatasource
 > = {
   specVersion: '1.0.0',
@@ -244,7 +244,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
       ...(eventData.toJSON() as unknown as RawEvent),
       blockNumber: original.block.block.header.number.toNumber(),
       blockHash: await getEtheruemBlockHash(api, original.block.block.header.number.toNumber()),
-      blockTimestamp: block.timestamp,
+      blockTimestamp: block.timestamp!,
       transactionIndex: extrinsic?.idx ?? -1,
       transactionHash: hash,
       removed: false,
@@ -330,11 +330,11 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
 };
 
-const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
+const CallProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   FrontierEvmCallFilter,
   FrontierEvmCall,
-  [TransactionV2 | EthTransaction],
+  // [TransactionV2 | EthTransaction],
   FrontierEvmDatasource
 > = {
   specVersion: '1.0.0',
@@ -346,10 +346,10 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     const rawTx = (tx as TransactionV2).isEip1559
       ? (tx as TransactionV2).asEip1559
       : (tx as TransactionV2).isEip2930
-      ? (tx as TransactionV2).asEip2930
-      : (tx as TransactionV2).isLegacy
-      ? (tx as TransactionV2).asLegacy
-      : (tx as EthTransaction);
+        ? (tx as TransactionV2).asEip2930
+        : (tx as TransactionV2).isLegacy
+          ? (tx as TransactionV2).asLegacy
+          : (tx as EthTransaction);
 
     let from = '',
       hash = '',
@@ -386,7 +386,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       hash,
       blockNumber: original.block.block.header.number.toNumber(),
       blockHash: await getEtheruemBlockHash(api, original.block.block.header.number.toNumber()),
-      timestamp: Math.round(original.block.timestamp.getTime() / 1000),
+      timestamp: Math.round(original.block.timestamp!.getTime() / 1000),
       success,
     };
 
@@ -476,10 +476,10 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       const rawTx = (tx as TransactionV2).isEip1559
         ? (tx as TransactionV2).asEip1559
         : (tx as TransactionV2).isEip2930
-        ? (tx as TransactionV2).asEip2930
-        : (tx as TransactionV2).isLegacy
-        ? (tx as TransactionV2).asLegacy
-        : (tx as EthTransaction);
+          ? (tx as TransactionV2).asEip2930
+          : (tx as TransactionV2).isLegacy
+            ? (tx as TransactionV2).asLegacy
+            : (tx as EthTransaction);
       // if `to` is null then we handle contract creation
       if (
         (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, to)) ||

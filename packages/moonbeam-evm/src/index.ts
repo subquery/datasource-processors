@@ -35,7 +35,7 @@ type MoonbeamEventSecondLayerHandlerProcessor = SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   MoonbeamEventFilter,
   MoonbeamEvent,
-  [EvmLog],
+  // [EvmLog],
   MoonbeamDatasource
 >;
 
@@ -43,7 +43,7 @@ type MoonbeamCallSecondLayerHandlerProcessor = SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   MoonbeamCallFilter,
   MoonbeamCall,
-  [TransactionV2 | EthTransaction],
+  // [TransactionV2 | EthTransaction],
   MoonbeamDatasource
 >;
 

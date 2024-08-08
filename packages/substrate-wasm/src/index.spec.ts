@@ -21,7 +21,7 @@ import WasmDatasourcePlugin, {
 } from './index';
 
 import {fetchBlock} from '../../../test/helpers';
-import {Bytes, u8, Vec} from '@polkadot/types';
+import {u8, Vec} from '@polkadot/types';
 import path from 'path';
 
 import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
@@ -37,34 +37,12 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
   nestedKey: 'payload',
 }).getLogger('WasmTests');
 
-const SHIBUYA_ENDPOINT = 'wss://rpc.shibuya.astar.network';
+const SHIBUYA_ENDPOINT = 'wss://shibuya-rpc.dwellir.com';
 const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
 const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
 const MULTISIG_FACTORY_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/multisig_factory.json');
 
 const DICTIONARY_URL = 'https://api.subquery.network/sq/subquery/shiden-dictionary';
-
-const baseDS: WasmDatasource = {
-  kind: 'substrate/Wasm',
-  processor: {
-    file: '',
-    options: {
-      abi: 'erc20',
-      contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-    },
-  },
-  assets: new Map([['erc20', {file: ERC20_PATH}]]),
-  mapping: {
-    file: '',
-    handlers: [
-      {
-        kind: 'substrate/WasmCall',
-        filter: {},
-        handler: 'imaginaryHandler',
-      },
-    ],
-  },
-};
 
 const dsTransfer = {
   kind: 'substrate/Wasm',
@@ -77,6 +55,20 @@ const dsTransfer = {
   },
   assets: new Map([['erc20', {file: ERC20_PATH}]]),
 } as unknown as WasmDatasource;
+
+const baseDS: WasmDatasource = {
+  ...dsTransfer,
+  mapping: {
+    file: '',
+    handlers: [
+      {
+        kind: 'substrate/WasmCall',
+        filter: {},
+        handler: 'imaginaryHandler',
+      },
+    ],
+  },
+};
 const dsFlip = {
   kind: 'substrate/Wasm',
   processor: {
@@ -87,18 +79,6 @@ const dsFlip = {
     },
   },
   assets: new Map([['flip', {file: FLIP_PATH}]]),
-} as unknown as WasmDatasource;
-
-const dsMultiSigFactory = {
-  kind: 'substrate/Wasm',
-  processor: {
-    file: '',
-    options: {
-      abi: 'multisig_factory',
-      contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC',
-    },
-  },
-  assets: new Map([['flip', {file: MULTISIG_FACTORY_PATH}]]),
 } as unknown as WasmDatasource;
 
 const assets = {
@@ -131,18 +111,21 @@ describe('WasmDS', () => {
       const blockNumber = 2105713;
       const {extrinsics} = await fetchBlock(api, blockNumber);
       const decoded = decodeMessage(extrinsics[2].extrinsic.args[4].toU8a(), flipAbi);
+
+      expect(decoded.args).toHaveLength(0);
+      expect(decoded.message.identifier).toEqual('flip');
     });
+
     it('decode event', async function () {
       const erc20Abi = buildAbi(dsTransfer, assets);
       const blockNumber = 2135058;
       const {events} = await fetchBlock(api, blockNumber);
-      const {
-        event: {
-          data: [, data],
-        },
-      } = events[7];
-      const decoded = decodeEvent(data as Bytes, erc20Abi);
+      const decoded = decodeEvent(events[7], erc20Abi);
+
       expect(decoded?.event.identifier).toBe('Transfer');
+      expect(decoded?.args[0].toString()).toBe('5H3Yk49EsYMcZsoZSXqXMuBw7Htp3v1b1QXTKnT7rgXCyoPi');
+      expect(decoded?.args[1].toString()).toBe('5FdYHZTPBofcRjRE5jSib6FMXHEkuyDYjQswPTpjt2fso4LY');
+      expect(decoded?.args[2].toString()).toBe('0');
     });
   });
 

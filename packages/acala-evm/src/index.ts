@@ -19,7 +19,7 @@ import {
   SubstrateExtrinsic,
   SubstrateCustomHandler,
   SubstrateMapping,
-  SecondLayerHandlerProcessor_1_0_0,
+  SecondLayerHandlerProcessor,
 } from '@subql/types';
 import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
@@ -225,11 +225,11 @@ function findLogs(
     .filter((log) => logMatchesTopics(log, filter?.topics)); // Filter by topics
 }
 
-const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
+const EventProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   AcalaEvmEventFilter,
   AcalaEvmEvent,
-  AnyTuple, // TODO improve this type
+  // AnyTuple, // TODO improve this type
   AcalaEvmDatasource
 > = {
   specVersion: '1.0.0',
@@ -248,7 +248,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         ...partialLog,
         blockNumber: input.block.block.header.number.toNumber(),
         blockHash: input.block.hash.toHex(),
-        blockTimestamp: input.block.timestamp,
+        blockTimestamp: input.block.timestamp!,
         transactionIndex: input.extrinsic?.idx ?? -1,
         transactionHash: input.extrinsic?.extrinsic.hash.toHex() ?? DUMMY_TX_HASH,
         from,
@@ -309,11 +309,11 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
 };
 
-const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
+const CallProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   AcalaEvmCallFilter,
   AcalaEvmCall,
-  AnyTuple, // TODO improve this type
+  // AnyTuple, // TODO improve this type
   AcalaEvmDatasource
 > = {
   specVersion: '1.0.0',

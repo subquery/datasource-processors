@@ -341,7 +341,7 @@ const CallProcessor: SecondLayerHandlerProcessor<
       hash: original.extrinsic.hash.toHex(), // Substrate extrinsic hash
       blockNumber: original.block.block.header.number.toNumber(),
       blockHash: original.block.block.hash.toHex(), // Substrate block hash
-      timestamp: Math.round(original.block.timestamp.getTime() / 1000),
+      timestamp: Math.round(original.block.timestamp!.getTime() / 1000),
       success,
     };
 

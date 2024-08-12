@@ -16,7 +16,7 @@
     "class-validator": "^0.14.1"
   },
   "devDependencies": {
-    "@subql/types": "dev",
+    "@subql/types": "^3.11.1",
     "@types/lodash": "^4.17.7",
     "axios": "^1.7.3",
     "esbuild": "^0.15.18",

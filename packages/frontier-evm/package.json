@@ -11,7 +11,7 @@
     "build": "rm -rf dist && yarn build:ts && yarn build:bundle"
   },
   "dependencies": {
-    "@subql/types": "dev",
+    "@subql/types": "^3.11.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "ethers": "^5.7.2"

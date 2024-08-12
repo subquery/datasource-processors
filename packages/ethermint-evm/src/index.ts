@@ -1,11 +1,12 @@
 import {
-  SecondLayerHandlerProcessor_1_0_0,
-  SubqlCosmosCustomDatasource,
-  SubqlCosmosCustomHandler,
-  SubqlCosmosHandlerKind,
-  SubqlCosmosMapping,
-  SubqlCosmosDatasourceProcessor,
+  // SecondLayerHandlerProcessor_1_0_0,
+  CosmosCustomDatasource,
+  CosmosCustomHandler,
+  CosmosHandlerKind,
+  CosmosMapping,
+  CosmosDatasourceProcessor,
   CosmosEvent,
+  SecondLayerHandlerProcessor,
 } from '@subql/types-cosmos';
 import {DictionaryQueryEntry} from '@subql/types-core';
 import {
@@ -33,17 +34,17 @@ export interface Attribute {
 type TopicFilter = string | null | undefined;
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
 
-export interface EthermintEvmEventFilter {
+export interface EthermintEvmEventFilter extends Record<string, any> {
   topics?: [TopicFilter, TopicFilter?, TopicFilter?, TopicFilter?];
 }
 
-export type EthermintEvmDatasource = SubqlCosmosCustomDatasource<
+export type EthermintEvmDatasource = CosmosCustomDatasource<
   'cosmos/EthermintEvm',
-  SubqlCosmosMapping<SubqlCosmosCustomHandler>,
+  CosmosMapping<CosmosCustomHandler>,
   EthermintEvmProcessorOptions
 >;
 
-export interface EthermintEvmCallFilter {
+export interface EthermintEvmCallFilter extends Record<string, any> {
   from?: string;
   method?: string;
 }
@@ -178,15 +179,15 @@ function isSuccess(rawLog: string, index: number): boolean {
   }
 }
 
-const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
-  SubqlCosmosHandlerKind.Event,
+const EventProcessor: SecondLayerHandlerProcessor<
+  CosmosHandlerKind.Event,
   EthermintEvmEventFilter,
   EthermintEvmEvent,
   EthermintEvmDatasource
 > = {
   specVersion: '1.0.0',
   baseFilter: [{type: 'tx_log'}],
-  baseHandlerKind: SubqlCosmosHandlerKind.Event,
+  baseHandlerKind: CosmosHandlerKind.Event,
   async transformer({assets, ds, filter, input: original}): Promise<EthermintEvmEvent[]> {
     const logs = findLogs(ds.processor?.options?.address, filter, original);
     return logs.map((l) => {
@@ -260,15 +261,15 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
 };
 
-const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
-  SubqlCosmosHandlerKind.Message,
+const MessageProcessor: SecondLayerHandlerProcessor<
+  CosmosHandlerKind.Message,
   EthermintEvmCallFilter,
   EthermintEvmCall,
   EthermintEvmDatasource
 > = {
   specVersion: '1.0.0',
   baseFilter: [{type: '/ethermint.evm.v1.MsgEthereumTx'}],
-  baseHandlerKind: SubqlCosmosHandlerKind.Message,
+  baseHandlerKind: CosmosHandlerKind.Message,
   async transformer({assets, ds, input: original}): Promise<[EthermintEvmCall]> {
     let call: EthermintEvmCall;
 
@@ -397,7 +398,7 @@ const MessageProcessor: SecondLayerHandlerProcessor_1_0_0<
 };
 
 export const EthermintEvmDatasourcePlugin = <
-  SubqlCosmosDatasourceProcessor<
+  CosmosDatasourceProcessor<
     'cosmos/EthermintEvm',
     any,
     EthermintEvmDatasource,

@@ -12,5 +12,8 @@
   },
   "dependencies": {
     "@subql/frontier-evm-processor": "workspace:*"
+  },
+  "devDependencies": {
+    "esbuild": "^0.15.18"
   }
 }

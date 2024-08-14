@@ -332,7 +332,7 @@ export function getSelector(data: Vec<u8>): string {
   }
 }
 
-const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
+const EventProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   WasmEventFilter,
   WasmEvent,

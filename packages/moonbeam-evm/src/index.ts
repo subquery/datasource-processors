@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {Result} from '@ethersproject/abi';
-import {TransactionV2, EthTransaction, EvmLog} from '@polkadot/types/interfaces';
 import {
   SecondLayerHandlerProcessor,
   SubstrateCustomDatasource,

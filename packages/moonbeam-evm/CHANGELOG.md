@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2024-08-14
+### Changed
+- Update dependencies and apply any relevant changes (#56)
+
 ## [1.0.0] - 2023-10-05
 ### Added
 - JSDoc to filters (#54)
@@ -32,7 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Migrated from `@subql/contract-processors` package
 
-[Unreleased]: https://github.com/subquery/datasource-processors/compare/moonbeam-evm-processor/1.0.0...HEAD
+[Unreleased]: https://github.com/subquery/datasource-processors/compare/moonbeam-evm/1.0.1...HEAD
+[1.0.1]: https://github.com/subquery/datasource-processors/compare/moonbeam-evm/1.0.0...moonbeam-evm/1.0.1
 [1.0.0]: https://github.com/subquery/datasource-processors/compare/moonbeam-evm-processor/0.1.2...moonbeam-evm-processor/1.0.0
 [0.1.2]: https://github.com/subquery/datasource-processors/moonbeam-evm/0.1.1...moonbeam-evm/0.1.2
 [0.1.1]: https://github.com/subquery/datasource-processors/moonbeam-evm/0.1.0...moonbeam-evm/0.1.1

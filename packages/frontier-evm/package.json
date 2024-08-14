@@ -1,6 +1,6 @@
 {
   "name": "@subql/frontier-evm-processor",
-  "version": "1.0.0",
+  "version": "1.0.1-0",
   "description": "SubQuery datasource processor for Frontier EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
@@ -23,5 +23,6 @@
   },
   "peerDependencies": {
     "@polkadot/api": "^12"
-  }
+  },
+  "stableVersion": "1.0.0"
 }

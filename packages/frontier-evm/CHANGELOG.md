@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2024-08-14
+### Changed
+- Update dependencies and apply any relevant changes (#56)
+
 ## [1.0.0] - 2023-10-05
 ### Changed
 - Updated dependencies (#54)
@@ -40,7 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - update to datasource spec version 1.0.0
 
-[Unreleased]: https://github.com/subquery/datasource-processors/compare/frontier-evm-processor/1.0.0...HEAD
+[Unreleased]: https://github.com/subquery/datasource-processors/compare/frontier-evm/1.0.1...HEAD
+[1.0.1]: https://github.com/subquery/datasource-processors/compare/frontier-evm/1.0.0...frontier-evm/1.0.1
 [1.0.0]: https://github.com/subquery/datasource-processors/compare/frontier-evm-processor/0.1.4...frontier-evm-processor/1.0.0
 [0.1.4]: https://github.com/subquery/datasource-processors/frontier-evm/0.1.3...frontier-evm/0.1.4
 [0.1.3]: https://github.com/subquery/datasource-processors/frontier-evm/0.1.2...frontier-evm/0.1.3

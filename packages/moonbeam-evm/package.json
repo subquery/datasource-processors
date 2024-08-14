@@ -1,6 +1,6 @@
 {
   "name": "@subql/moonbeam-evm-processor",
-  "version": "1.0.1-0",
+  "version": "1.0.1",
   "description": "SubQuery datasource processor for Moonbeam EVM",
   "main": "dist/index.js",
   "author": "Subquery Pte Limited",
@@ -8,13 +8,13 @@
   "scripts": {
     "build:ts": "tsc -b",
     "build:bundle": "esbuild src/index.ts --platform=node --bundle --tree-shaking=true --format=cjs --minify --outfile=dist/bundle.js",
-    "build": "yarn build:ts && yarn build:bundle"
+    "build": "yarn build:ts && yarn build:bundle",
+    "changelog:release": "echo \"Updating changelog $npm_package_version\" && npx chan release $npm_package_version --git-url \"https://github.com/subquery/datasource-processors\" --release-prefix=\"moonbeam-evm/\""
   },
   "dependencies": {
     "@subql/frontier-evm-processor": "workspace:*"
   },
   "devDependencies": {
     "esbuild": "^0.15.18"
-  },
-  "stableVersion": "1.0.0"
+  }
 }

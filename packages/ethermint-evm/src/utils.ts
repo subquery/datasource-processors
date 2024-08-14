@@ -4,7 +4,6 @@
 import {EventFragment, FunctionFragment} from '@ethersproject/abi';
 import {isHexString, hexStripZeros, hexDataSlice} from '@ethersproject/bytes';
 import {id} from '@ethersproject/hash';
-import {CustomModule} from '@subql/types-cosmos';
 
 export function stringNormalizedEq(a?: string, b?: string): boolean {
   return a?.toLowerCase() === b?.toLowerCase();

@@ -3,16 +3,17 @@
 
 import {Bytes, Option, Compact, u128, u8, Vec} from '@polkadot/types';
 import {BalanceOf, Address, Weight} from '@polkadot/types/interfaces/runtime';
-import {u8aToU8a, hexToU8a} from '@polkadot/util';
+import {u8aToU8a} from '@polkadot/util';
 
 import {
+  SecondLayerHandlerProcessor,
   SubstrateDatasourceProcessor,
   SubstrateCustomDatasource,
   SubstrateHandlerKind,
   SubstrateCustomHandler,
   SubstrateMapping,
-  SecondLayerHandlerProcessor_1_0_0,
   SubstrateEvent,
+  LightSubstrateEvent,
 } from '@subql/types';
 import {DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
@@ -131,7 +132,7 @@ export interface WasmEvent<T extends Result = Result> {
   blockNumber: number;
   blockEventIdx: number;
   blockHash: string;
-  timestamp: Date;
+  timestamp?: Date;
 }
 export interface WasmCall<T extends Result = Result> {
   from: Address;
@@ -146,7 +147,7 @@ export interface WasmCall<T extends Result = Result> {
   blockNumber: number;
   idx: number;
   blockHash: string;
-  timestamp: Date;
+  timestamp?: Date;
 }
 
 class WasmProcessorOptions {
@@ -248,7 +249,8 @@ export function buildAbi(ds: WasmDatasource, assets?: Record<string, string> | u
   return contractAbis[abi];
 }
 
-export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
+// NOTE this type has changed, polkadot types are poor so the top level event should be passed
+export function decodeEvent(data: SubstrateEvent | LightSubstrateEvent, iAbi?: Abi): DecodedEvent | undefined {
   if (decodedEvent[data.toString()]) {
     return decodedEvent[data.toString()];
   } else {
@@ -257,7 +259,7 @@ export function decodeEvent(data: Bytes, iAbi?: Abi): DecodedEvent | undefined {
     if (!iAbi) {
       throw new Error(`Decode event failed, got abi undefined`);
     }
-    decodedEvent[data.toString()] = iAbi?.decodeEvent(hexToU8a(data.toString()));
+    decodedEvent[data.toString()] = iAbi?.decodeEvent(data as any);
   }
   return decodedEvent[data.toString()];
 }
@@ -330,11 +332,11 @@ export function getSelector(data: Vec<u8>): string {
   }
 }
 
-const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
+const EventProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   WasmEventFilter,
   WasmEvent,
-  ContractEmittedResult,
+  // ContractEmittedResult,
   WasmDatasource
 > = {
   specVersion: '1.0.0',
@@ -352,7 +354,7 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
     let decodedData: DecodedEvent | undefined;
     try {
       const iAbi = buildAbi(ds, assets);
-      decodedData = decodeEvent(data, iAbi);
+      decodedData = decodeEvent(original, iAbi);
       if (decodedData === undefined) {
         (global as any).logger?.warn(
           `Unable to decode wasm event ${original.block.block.header.number}-${
@@ -373,22 +375,22 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
         transactionHash: original.hash.toString(),
         timestamp: block.timestamp,
         from,
-        contract: contract,
+        contract: contract as AccountId,
         //align with https://github.com/polkadot-js/api/blob/0b6f7861080c920407a346e2a3dbe64adcb07a1e/packages/api-contract/src/Abi/index.ts#L125
-        eventIndex: data[0],
+        eventIndex: (data as any)[0],
         identifier: decodedData?.event.identifier,
         args: decodedData?.args,
       },
     ];
   },
   filterProcessor({ds, filter, input}): boolean {
-    const [contract, data] = input.event.data;
+    const [contract] = input.event.data;
     if (ds.processor?.options?.contract && !stringNormalizedEq(ds.processor.options.contract, contract.toString())) {
       return false;
     }
     if (filter?.identifier) {
       const iAbi = buildAbi(ds);
-      const decoded = decodeEvent(data, iAbi);
+      const decoded = decodeEvent(input, iAbi);
 
       const determine = decoded?.event.identifier === filter.identifier;
       return determine;
@@ -433,11 +435,11 @@ const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   },
 };
 
-const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
+const CallProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   WasmCallFilter,
   WasmCall,
-  ContractCallArgs,
+  // ContractCallArgs,
   WasmDatasource
 > = {
   specVersion: '1.0.0',
@@ -462,14 +464,14 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
     const call: WasmCall = {
       // Transaction properties
       from: original.extrinsic.signer,
-      dest: dest,
-      value: value,
-      gasLimit: gasLimit,
+      dest: dest as Address,
+      value: value as BalanceOf,
+      gasLimit: gasLimit as Weight,
       storageDepositLimit: storageDepositLimit as Option<Compact<u128>>,
       // if unable to decode, return as string
       data: decodedMessage ? {args: decodedMessage?.args, message: decodedMessage.message} : data.toHex(),
       success,
-      selector: getSelector(data),
+      selector: getSelector(data as any),
       // Transaction response properties
       hash: original.extrinsic.hash.toHex(), // Substrate extrinsic hash
       blockNumber: original.block.block.header.number.toNumber(),
@@ -504,7 +506,7 @@ const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
       } catch (e) {
         //If unable to decode use abi, ty to use getSelector method to filter
         if (filter?.selector) {
-          return filter.selector === getSelector(data);
+          return filter.selector === getSelector(data as any);
         }
       }
       return true;

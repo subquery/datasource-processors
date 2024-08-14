@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import {Result} from '@ethersproject/abi';
-import {TransactionV2, EthTransaction, EvmLog} from '@polkadot/types/interfaces';
 import {
   SecondLayerHandlerProcessor,
   SubstrateCustomDatasource,
@@ -35,7 +34,7 @@ type MoonbeamEventSecondLayerHandlerProcessor = SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Event,
   MoonbeamEventFilter,
   MoonbeamEvent,
-  [EvmLog],
+  // [EvmLog],
   MoonbeamDatasource
 >;
 
@@ -43,7 +42,7 @@ type MoonbeamCallSecondLayerHandlerProcessor = SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   MoonbeamCallFilter,
   MoonbeamCall,
-  [TransactionV2 | EthTransaction],
+  // [TransactionV2 | EthTransaction],
   MoonbeamDatasource
 >;
 

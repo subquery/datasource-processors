@@ -21,7 +21,7 @@ import WasmDatasourcePlugin, {
 } from './index';
 
 import {fetchBlock} from '../../../test/helpers';
-import {Bytes, u8, Vec} from '@polkadot/types';
+import {u8, Vec} from '@polkadot/types';
 import path from 'path';
 
 import {Balance, AccountId} from '@polkadot/types/interfaces/runtime';
@@ -37,34 +37,12 @@ type TransferEventArgs = [Option<AccountId>, Option<AccountId>, Balance];
   nestedKey: 'payload',
 }).getLogger('WasmTests');
 
-const SHIBUYA_ENDPOINT = 'wss://rpc.shibuya.astar.network';
+const SHIBUYA_ENDPOINT = 'wss://shibuya-rpc.dwellir.com';
 const FLIP_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/flipMetadata.json');
 const ERC20_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/erc20Metadata.json');
 const MULTISIG_FACTORY_PATH = path.join(process.cwd(), './packages/substrate-wasm/test/multisig_factory.json');
 
 const DICTIONARY_URL = 'https://api.subquery.network/sq/subquery/shiden-dictionary';
-
-const baseDS: WasmDatasource = {
-  kind: 'substrate/Wasm',
-  processor: {
-    file: '',
-    options: {
-      abi: 'erc20',
-      contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-    },
-  },
-  assets: new Map([['erc20', {file: ERC20_PATH}]]),
-  mapping: {
-    file: '',
-    handlers: [
-      {
-        kind: 'substrate/WasmCall',
-        filter: {},
-        handler: 'imaginaryHandler',
-      },
-    ],
-  },
-};
 
 const dsTransfer = {
   kind: 'substrate/Wasm',
@@ -77,6 +55,20 @@ const dsTransfer = {
   },
   assets: new Map([['erc20', {file: ERC20_PATH}]]),
 } as unknown as WasmDatasource;
+
+const baseDS: WasmDatasource = {
+  ...dsTransfer,
+  mapping: {
+    file: '',
+    handlers: [
+      {
+        kind: 'substrate/WasmCall',
+        filter: {},
+        handler: 'imaginaryHandler',
+      },
+    ],
+  },
+};
 const dsFlip = {
   kind: 'substrate/Wasm',
   processor: {
@@ -87,18 +79,6 @@ const dsFlip = {
     },
   },
   assets: new Map([['flip', {file: FLIP_PATH}]]),
-} as unknown as WasmDatasource;
-
-const dsMultiSigFactory = {
-  kind: 'substrate/Wasm',
-  processor: {
-    file: '',
-    options: {
-      abi: 'multisig_factory',
-      contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC',
-    },
-  },
-  assets: new Map([['flip', {file: MULTISIG_FACTORY_PATH}]]),
 } as unknown as WasmDatasource;
 
 const assets = {
@@ -131,18 +111,21 @@ describe('WasmDS', () => {
       const blockNumber = 2105713;
       const {extrinsics} = await fetchBlock(api, blockNumber);
       const decoded = decodeMessage(extrinsics[2].extrinsic.args[4].toU8a(), flipAbi);
+
+      expect(decoded.args).toHaveLength(0);
+      expect(decoded.message.identifier).toEqual('flip');
     });
+
     it('decode event', async function () {
       const erc20Abi = buildAbi(dsTransfer, assets);
       const blockNumber = 2135058;
       const {events} = await fetchBlock(api, blockNumber);
-      const {
-        event: {
-          data: [, data],
-        },
-      } = events[7];
-      const decoded = decodeEvent(data as Bytes, erc20Abi);
+      const decoded = decodeEvent(events[7], erc20Abi);
+
       expect(decoded?.event.identifier).toBe('Transfer');
+      expect(decoded?.args[0].toString()).toBe('5H3Yk49EsYMcZsoZSXqXMuBw7Htp3v1b1QXTKnT7rgXCyoPi');
+      expect(decoded?.args[1].toString()).toBe('5FdYHZTPBofcRjRE5jSib6FMXHEkuyDYjQswPTpjt2fso4LY');
+      expect(decoded?.args[2].toString()).toBe('0');
     });
   });
 
@@ -183,15 +166,13 @@ describe('WasmDS', () => {
     describe('Filtering', () => {
       it('check query entity for contractEmitteds', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmEvent'];
-        const query = processor.dictionaryQuery
-          ? await processor.dictionaryQuery(
-              {
-                contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
-                identifier: 'Transfer',
-              },
-              ds
-            )
-          : undefined;
+        const query = processor.dictionaryQuery?.(
+          {
+            contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
+            identifier: 'Transfer',
+          },
+          ds
+        );
 
         const response = await axios.post(DICTIONARY_URL, {
           query: `query { ${query?.entity} { nodes {eventIndex} } }`,
@@ -211,7 +192,7 @@ describe('WasmDS', () => {
         // ).toBeTruthy();
 
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {},
             input: event,
             ds: {
@@ -224,14 +205,14 @@ describe('WasmDS', () => {
 
       it('filters topics', async () => {
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {},
             input: event,
             ds,
           })
         ).toBeTruthy();
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {
               contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
               identifier: 'Transfer',
@@ -241,7 +222,7 @@ describe('WasmDS', () => {
           })
         ).toBeTruthy();
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {identifier: '0x6bd193ee6d2104f14f94e2ca6efefae561a4334b'},
             input: event,
             ds,
@@ -277,7 +258,7 @@ describe('WasmDS', () => {
         //     Abi as any,
         //     `decodeEvent`,
         // );
-        await processor.filterProcessor({
+        processor.filterProcessor({
           filter: {
             contract: 'a6Yrf6jAPUwjoi5YvvoTE4ES5vYAMpV55ZCsFHtwMFPDx7H',
             identifier: 'Transfer',
@@ -339,14 +320,7 @@ describe('WasmDS', () => {
           },
           assets: new Map([['flip', {file: FLIP_PATH}]]),
         } as unknown as WasmDatasource;
-        const query = processor.dictionaryQuery
-          ? await processor.dictionaryQuery(
-              {
-                selector: '0x633aa551',
-              },
-              ds
-            )
-          : undefined;
+        const query = processor.dictionaryQuery?.({selector: '0x633aa551'}, ds);
 
         const response = await axios.post(DICTIONARY_URL, {
           query: `query { ${query?.entity} { nodes {selector} } }`,
@@ -356,7 +330,7 @@ describe('WasmDS', () => {
       });
       it('filters matching contract address', async () => {
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {},
             input: extrinsic,
             ds,
@@ -364,7 +338,7 @@ describe('WasmDS', () => {
         ).toBeTruthy();
 
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {},
             input: extrinsic,
             ds: {
@@ -376,14 +350,14 @@ describe('WasmDS', () => {
 
       it('can filter from', async () => {
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {from: 'b1enkZo2igzkFv9vpkTbZczyketzwPsoeL81cuabx9xyxmh'},
             input: extrinsic,
             ds,
           })
         ).toBeTruthy();
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {from: '0x0000000000000000000000000000000000000000'},
             input: extrinsic,
             ds,
@@ -392,14 +366,14 @@ describe('WasmDS', () => {
       });
       it('can filter method', async () => {
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {method: 'flip'},
             input: extrinsic,
             ds,
           })
         ).toBeTruthy();
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {method: 'Transfer'},
             input: extrinsic,
             ds,
@@ -409,14 +383,14 @@ describe('WasmDS', () => {
 
       it('can filter selector', async () => {
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {selector: '0x633aa551'},
             input: extrinsic,
             ds,
           })
         ).toBeTruthy();
         expect(
-          await processor.filterProcessor({
+          processor.filterProcessor({
             filter: {selector: '0x2f865bd9'},
             input: extrinsic,
             ds,
@@ -533,9 +507,7 @@ describe('WasmDS', () => {
 
       it('generate dictionary query with call filters selector', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query = processor.dictionaryQuery
-          ? await processor.dictionaryQuery({selector: '0x633aa551'}, ds)
-          : undefined;
+        const query = processor.dictionaryQuery?.({selector: '0x633aa551'}, ds);
 
         expect(query?.conditions[1].field).toBe('selector');
         expect(query?.conditions[1].value).toBe('0x633aa551');
@@ -543,25 +515,21 @@ describe('WasmDS', () => {
 
       it('generate dictionary query with call filters method', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query = processor.dictionaryQuery ? await processor.dictionaryQuery({method: 'get'}, ds) : undefined;
+        const query = processor.dictionaryQuery?.({method: 'get'}, ds);
         expect(query?.conditions[1].field).toBe('selector');
         expect(query?.conditions[1].value).toBe('0x2f865bd9');
       });
 
       it('it unique selectors', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query = processor.dictionaryQuery
-          ? await processor.dictionaryQuery({selector: '0x633aa551', method: 'flip'}, ds)
-          : undefined;
+        const query = processor.dictionaryQuery?.({selector: '0x633aa551', method: 'flip'}, ds);
         expect(query?.conditions[1].field).toBe('selector');
         expect(query?.conditions[1].value).toBe('0x633aa551');
       });
 
       it('if the selector and method not match, take selector into dictionary query only', async () => {
         const processor = WasmDatasourcePlugin.handlerProcessors['substrate/WasmCall'];
-        const query: DictionaryQueryEntry | undefined = processor.dictionaryQuery
-          ? await processor.dictionaryQuery({selector: '0x633aa551', method: 'get'}, ds)
-          : undefined;
+        const query = processor.dictionaryQuery?.({selector: '0x633aa551', method: 'get'}, ds);
         expect(query?.conditions[1].field).toBe('selector');
         expect(query?.conditions[1].value).toBe('0x633aa551');
       });
@@ -611,12 +579,10 @@ describe('Wasm V4', () => {
         } as unknown as WasmDatasource;
         WasmDatasourcePlugin.validate(ds, assets);
 
-        const query = processor.dictionaryQuery
-          ? await processor.dictionaryQuery(
-              {contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC', identifier: 'NewMultisig'},
-              ds
-            )
-          : undefined;
+        const query = processor.dictionaryQuery?.(
+          {contract: '5HRfJo4TkyLU2Dh8pmaTyU5ynMr94uLv9GYZnRHpsCBiECaC', identifier: 'NewMultisig'},
+          ds
+        );
         expect(query?.entity).toBe('contractEmitteds');
         expect(query?.conditions).toStrictEqual([
           {field: 'contract', value: '5hrfjo4tkylu2dh8pmatyu5ynmr94ulv9gyznrhpscbiecac'},

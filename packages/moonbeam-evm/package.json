@@ -11,13 +11,9 @@
     "build": "yarn build:ts && yarn build:bundle"
   },
   "dependencies": {
-    "@subql/frontier-evm-processor": "workspace:*",
-    "@subql/types": "latest"
+    "@subql/frontier-evm-processor": "workspace:*"
   },
   "devDependencies": {
-    "typescript": "^4.6.4"
-  },
-  "peerDependencies": {
-    "@polkadot/api": "^10"
+    "esbuild": "^0.15.18"
   }
 }

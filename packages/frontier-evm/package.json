@@ -18,11 +18,11 @@
     "ethers": "^5.7.2"
   },
   "devDependencies": {
-    "@subql/utils": "^2.14.0",
-    "esbuild": "^0.15.18",
-    "moonbeam-types-bundle": "^2.0.10"
+    "@moonbeam-network/types-bundle": "^1.0.2",
+    "@subql/utils": "^2.21.2",
+    "esbuild": "^0.15.18"
   },
   "peerDependencies": {
-    "@polkadot/api": "^12"
+    "@polkadot/api": "~15.5"
   }
 }

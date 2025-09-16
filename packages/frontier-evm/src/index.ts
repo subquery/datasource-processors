@@ -1,4 +1,4 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
+// Copyright 2020-2025 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
 import '@polkadot/api-augment';
@@ -7,9 +7,16 @@ import {Log, TransactionResponse} from '@ethersproject/abstract-provider';
 import {BigNumber} from '@ethersproject/bignumber';
 import {hexDataSlice} from '@ethersproject/bytes';
 import {ApiPromise} from '@polkadot/api';
-import {EIP1559Transaction, TransactionV2, EthTransaction, EvmLog, ExitReason} from '@polkadot/types/interfaces';
 import {
-  SubstrateDatasourceProcessor,
+  EthTransactionSignature,
+  EIP1559Transaction,
+  // EIP7702Transaction,
+  TransactionV2,
+  EthTransaction,
+  EvmLog,
+  ExitReason,
+} from '@polkadot/types/interfaces';
+import {
   SubstrateCustomDatasource,
   SubstrateHandlerKind,
   SubstrateExtrinsic,
@@ -19,7 +26,7 @@ import {
   SubstrateEvent,
   SecondLayerHandlerProcessor,
 } from '@subql/types';
-import {DictionaryQueryEntry} from '@subql/types-core';
+import {DsProcessor, DictionaryQueryEntry} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
 import {
   IsOptional,
@@ -38,6 +45,19 @@ export {FrontierEthProvider};
 
 type TopicFilter = string | null | undefined;
 type Optional<T, K extends keyof T> = Pick<Partial<T>, K> & Omit<T, K>;
+
+// This is defined in newer versions of @polkadot/types but for compat versions we're using an older version
+type EIP7702Transaction = Omit<EIP1559Transaction, 'action' | 'input'> & {
+  data: any;
+  authorizationList: any;
+  destination: any;
+};
+
+// This is defined in newer versions of @polkadot/types but for compat versions we're using an older version
+type TransactionV3 = TransactionV2 & {
+  isEip7702: boolean;
+  asEip7702: EIP7702Transaction;
+};
 
 export type FrontierEvmDatasource = SubstrateCustomDatasource<
   'substrate/FrontierEvm',
@@ -334,22 +354,24 @@ const CallProcessor: SecondLayerHandlerProcessor<
   SubstrateHandlerKind.Call,
   FrontierEvmCallFilter,
   FrontierEvmCall,
-  // [TransactionV2 | EthTransaction],
+  // [TransactionV3 | EthTransaction],
   FrontierEvmDatasource
 > = {
   specVersion: '1.0.0',
   baseFilter: [{module: 'ethereum', method: 'transact'}],
   baseHandlerKind: SubstrateHandlerKind.Call,
   async transformer({api, assets, ds, input: original}): Promise<[FrontierEvmCall]> {
-    const [tx] = original.extrinsic.method.args;
+    const [tx] = original.extrinsic.method.args as [TransactionV3];
 
-    const rawTx = (tx as TransactionV2).isEip1559
-      ? (tx as TransactionV2).asEip1559
-      : (tx as TransactionV2).isEip2930
-        ? (tx as TransactionV2).asEip2930
-        : (tx as TransactionV2).isLegacy
-          ? (tx as TransactionV2).asLegacy
-          : (tx as EthTransaction);
+    const rawTx = tx.isEip1559
+      ? tx.asEip1559
+      : tx.isEip2930
+        ? tx.asEip2930
+        : tx.isEip7702
+          ? tx.asEip7702
+          : tx.isLegacy
+            ? tx.asLegacy
+            : (tx as unknown as EthTransaction);
 
     let from = '',
       hash = '',
@@ -375,11 +397,29 @@ const CallProcessor: SecondLayerHandlerProcessor<
 
     let call: FrontierEvmCall;
 
-    const baseCall /*: Partial<MoonbeamCall>*/ = {
+    // Special handling for signatures, the data doesn't align with the types for historical data
+    function extractSignature(tx: typeof rawTx): {r: string; s: string; v?: number} {
+      function hasSignature(tx: any): tx is {signature: EthTransactionSignature} {
+        return !!tx.signature;
+      }
+      if (hasSignature(tx)) {
+        return {
+          r: tx.signature.r.toHex(),
+          s: tx.signature.s.toHex(),
+          v: (tx.signature as any).v?.toNumber(), // Bad types
+        };
+      }
+      return {
+        r: (tx as EthTransaction).r.toHex(),
+        s: (tx as EthTransaction).s.toHex(),
+        v: (tx as EthTransaction).v?.toNumber(),
+      };
+    }
+
+    const baseCall /* : Partial<FrontierEvmCall> */ = {
       from,
       to, // when contract creation
       nonce: rawTx.nonce.toNumber(),
-      data: rawTx.input.toHex(),
       value: BigNumber.from(rawTx.value.toBigInt()),
 
       // Transaction response properties
@@ -388,47 +428,65 @@ const CallProcessor: SecondLayerHandlerProcessor<
       blockHash: await getEtheruemBlockHash(api, original.block.block.header.number.toNumber()),
       timestamp: Math.round(original.block.timestamp!.getTime() / 1000),
       success,
+
+      ...extractSignature(rawTx),
     };
 
-    if ((tx as TransactionV2).isEip1559) {
-      const eip1559tx = (tx as TransactionV2).asEip1559;
+    if (tx.isEip1559) {
+      const eip1559tx = tx.asEip1559;
 
       call = {
         ...baseCall,
+        data: eip1559tx.input.toHex(),
         chainId: eip1559tx.chainId.toNumber(),
         gasLimit: BigNumber.from(eip1559tx.gasLimit.toBigInt()),
         maxFeePerGas: BigNumber.from(eip1559tx.maxFeePerGas.toBigInt()),
         maxPriorityFeePerGas: BigNumber.from(eip1559tx.maxPriorityFeePerGas.toBigInt()),
 
-        s: eip1559tx.s.toHex(),
-        r: eip1559tx.r.toHex(),
+        // s: eip1559tx.signature.s.toHex(),
+        // r: eip1559tx.signature.r.toHex(),
         type: 2,
       };
-    } else if ((tx as TransactionV2).isEip2930) {
-      const eip2930tx = (tx as TransactionV2).asEip2930;
+    } else if (tx.isEip2930) {
+      const eip2930tx = tx.asEip2930;
 
       call = {
         ...baseCall,
+        data: eip2930tx.input.toHex(),
         chainId: eip2930tx.chainId.toNumber(),
         gasPrice: BigNumber.from(eip2930tx.gasPrice.toBigInt()),
         gasLimit: BigNumber.from(eip2930tx.gasLimit.toBigInt()),
-        s: eip2930tx.s.toHex(),
-        r: eip2930tx.r.toHex(),
+        // s: ((eip2930tx as any).s ?? eip2930tx.signature.s).toHex(),
+        // r: ((eip2930tx as any).r ?? eip2930tx.signature.r).toHex(),
         type: 1,
       };
-    } /*if (((tx as TransactionV2).isLegacy))*/ else {
-      const legacyTx = (tx as TransactionV2).asLegacy ?? tx;
+    } else if (tx.isEip7702) {
+      const eip7702tx = tx.asEip7702;
 
       call = {
         ...baseCall,
+        data: '',
+        chainId: eip7702tx.chainId.toNumber(),
+        gasLimit: BigNumber.from(eip7702tx.gasLimit.toBigInt()),
+        maxFeePerGas: BigNumber.from(eip7702tx.maxFeePerGas.toBigInt()),
+        maxPriorityFeePerGas: BigNumber.from(eip7702tx.maxPriorityFeePerGas.toBigInt()),
+        // s: eip7702tx.signature.s.toHex(),
+        // r: eip7702tx.signature.r.toHex(),
+        type: 3,
+      };
+    } /*if ((tx.isLegacy))*/ else {
+      const legacyTx = tx.asLegacy ?? tx;
 
+      call = {
+        ...baseCall,
+        data: legacyTx.input.toHex(),
         gasLimit: BigNumber.from(legacyTx.gasLimit.toBigInt()),
         gasPrice: BigNumber.from(legacyTx.gasPrice.toBigInt()),
         chainId: -1, // Unkonwn
 
-        r: legacyTx.signature.r.toHex(),
-        s: legacyTx.signature.s.toHex(),
-        v: legacyTx.signature.v.toNumber(),
+        // r: legacyTx.signature.r.toHex(),
+        // s: legacyTx.signature.s.toHex(),
+        // v: legacyTx.signature.v.toNumber(),
         type: 0,
       };
     } /* else {
@@ -471,15 +529,17 @@ const CallProcessor: SecondLayerHandlerProcessor<
         return false;
       }
 
-      const [tx] = input.extrinsic.method.args as [TransactionV2 | EthTransaction];
+      const [tx] = input.extrinsic.method.args as [TransactionV3];
 
-      const rawTx = (tx as TransactionV2).isEip1559
-        ? (tx as TransactionV2).asEip1559
-        : (tx as TransactionV2).isEip2930
-          ? (tx as TransactionV2).asEip2930
-          : (tx as TransactionV2).isLegacy
-            ? (tx as TransactionV2).asLegacy
-            : (tx as EthTransaction);
+      const rawTx = tx.isEip1559
+        ? tx.asEip1559
+        : tx.isEip2930
+          ? tx.asEip2930
+          : tx.isEip7702
+            ? tx.asEip7702
+            : tx.isLegacy
+              ? tx.asLegacy
+              : (tx as unknown as EthTransaction);
       // if `to` is null then we handle contract creation
       if (
         (ds.processor?.options?.address && !stringNormalizedEq(ds.processor.options.address, to)) ||
@@ -488,8 +548,11 @@ const CallProcessor: SecondLayerHandlerProcessor<
         return false;
       }
 
-      if (filter?.function && rawTx.input.toHex().indexOf(functionToSighash(filter.function)) !== 0) {
-        return false;
+      if (!tx.isEip7702) {
+        const tx = rawTx as Exclude<typeof rawTx, EIP7702Transaction>;
+        if (filter?.function && tx.input.toHex().indexOf(functionToSighash(filter.function)) !== 0) {
+          return false;
+        }
       }
 
       return true;
@@ -528,9 +591,7 @@ const CallProcessor: SecondLayerHandlerProcessor<
 };
 
 export const FrontierEvmDatasourcePlugin = <
-  SubstrateDatasourceProcessor<
-    'substrate/FrontierEvm',
-    FrontierEvmEventFilter | FrontierEvmCallFilter,
+  DsProcessor<
     FrontierEvmDatasource,
     {
       'substrate/FrontierEvmEvent': typeof EventProcessor;
@@ -539,7 +600,7 @@ export const FrontierEvmDatasourcePlugin = <
   >
 >{
   kind: 'substrate/FrontierEvm',
-  validate(ds: FrontierEvmDatasource, assets: Record<string, string>): void {
+  validate(ds, assets: Record<string, string>): void {
     if (ds.processor.options) {
       const opts = plainToClass(FrontierEvmProcessorOptions, ds.processor.options);
       const errors = validateSync(opts, {whitelist: true, forbidNonWhitelisted: true});
@@ -553,7 +614,7 @@ export const FrontierEvmDatasourcePlugin = <
 
     return;
   },
-  dsFilterProcessor(ds: FrontierEvmDatasource): boolean {
+  dsFilterProcessor(ds): boolean {
     return ds.kind === this.kind;
   },
   handlerProcessors: {

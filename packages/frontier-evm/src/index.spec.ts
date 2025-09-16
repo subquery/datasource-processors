@@ -1,10 +1,10 @@
-// Copyright 2020-2022 OnFinality Limited authors & contributors
+// Copyright 2020-2025 OnFinality Limited authors & contributors
 // SPDX-License-Identifier: Apache-2.0
 
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {Logger} from '@subql/utils';
 import {SubstrateEvent, SubstrateExtrinsic} from '@subql/types';
-import {typesBundleDeprecated} from 'moonbeam-types-bundle';
+import {typesBundleDeprecated as typesBundle} from '@moonbeam-network/types-bundle';
 import {TransactionV2, EthTransaction, EvmLog} from '@polkadot/types/interfaces';
 import FrontierEvmDatasourcePlugin, {FrontierEvmCall, FrontierEvmDatasource, FrontierEvmEvent} from '.';
 
@@ -144,7 +144,7 @@ describe('FrontierDS', () => {
   beforeAll(async () => {
     api = await ApiPromise.create({
       provider: new WsProvider('wss://moonriver.api.onfinality.io/public-ws'),
-      typesBundle: typesBundleDeprecated as any,
+      typesBundle: typesBundle,
       noInitWarn: true,
     });
   });
@@ -455,7 +455,7 @@ describe('FrontierDS', () => {
       it('can filter function on a legacy transaction post EIP1559', async () => {
         const moonbeamApi = await ApiPromise.create({
           provider: new WsProvider('wss://moonbeam.api.onfinality.io/public-ws'),
-          typesBundle: typesBundleDeprecated as any,
+          typesBundle: typesBundle,
         });
         const {extrinsics} = await fetchBlock(moonbeamApi, 459730);
 
@@ -686,7 +686,7 @@ describe('FrontierDS', () => {
 
         const moonbeamAlphaApi = await ApiPromise.create({
           provider: new WsProvider('wss://moonbeam-alpha.api.onfinality.io/public-ws'),
-          typesBundle: typesBundleDeprecated as any,
+          typesBundle: typesBundle,
         });
 
         const blockNumber = 131451;
@@ -718,11 +718,35 @@ describe('FrontierDS', () => {
         await moonbeamAlphaApi.disconnect();
       }, 400000);
 
+      it('can transform a tx with a signature object', async () => {
+        const moonbeamAlphaApi = await ApiPromise.create({
+          provider: new WsProvider('wss://moonbeam-alpha.api.onfinality.io/public-ws'),
+          typesBundle: typesBundle,
+        });
+
+        try {
+          const blockNumber = 13744976;
+          const {extrinsics} = await fetchBlock(moonbeamAlphaApi, blockNumber);
+
+          const [call] = (await processor.transformer({
+            input: extrinsics[4] as SubstrateExtrinsic<[TransactionV2 | EthTransaction]>,
+            ds: baseDS,
+            api: moonbeamAlphaApi,
+          })) as [FrontierEvmCall];
+
+          expect(call).toBeDefined();
+          expect(call.r).toBeDefined();
+          expect(call.s).toBeDefined();
+        } finally {
+          await moonbeamAlphaApi.disconnect();
+        }
+      });
+
       //Interface of transaction is EthTransaction, this was always the case pre EIP1559
       it('can transform an EthTransaction', async () => {
         const moonbeamApi = await ApiPromise.create({
           provider: new WsProvider('wss://moonbeam.api.onfinality.io/public-ws'),
-          typesBundle: typesBundleDeprecated as any,
+          typesBundle: typesBundle,
         });
 
         const blockNumber = 415946;
@@ -760,7 +784,7 @@ describe('FrontierDS', () => {
       it('can transform a legacy transaction post EIP1559', async () => {
         const moonbeamApi = await ApiPromise.create({
           provider: new WsProvider('wss://moonbeam.api.onfinality.io/public-ws'),
-          typesBundle: typesBundleDeprecated as any,
+          typesBundle: typesBundle,
         });
 
         const blockNumber = 459730;

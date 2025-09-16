@@ -19,7 +19,6 @@
     "ethers": "^5.7.2"
   },
   "devDependencies": {
-    "@subql/utils": "^2.14.0",
     "esbuild": "^0.15.18"
   }
 }

@@ -1,4 +1,4 @@
-name: "Release"
+name: 'Release'
 on:
   push:
     branches:
@@ -26,16 +26,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       #Check out
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 100
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v5
         with:
-          node-version: 16
+          node-version: 22
 
-    #Identify changes
+      #Identify changes
       - uses: marceloprado/has-changed-path@v1
         id: changed-acala-evm
         with:
@@ -62,7 +62,6 @@ jobs:
         with:
           paths: packages/substrate-wasm
       - run: yarn
-
 
       - name: build
         run: yarn build

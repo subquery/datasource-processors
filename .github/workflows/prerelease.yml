@@ -1,4 +1,4 @@
-name: "Prerelease"
+name: 'Prerelease'
 on:
   push:
     branches:
@@ -19,22 +19,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
 
-
   Bump-Prerelease-Publish:
     name: Bump-Prerelease-Publish
     needs: pre-ci
     if: "!startsWith(github.event.head_commit.message, '[SKIP CI]') && !startsWith(github.event.head_commit.message, '[release]') && github.repository == 'subquery/datasource-processors'"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 100
           token: ${{ secrets.REPO_TOKEN }}
 
       - name: Setup Node.js environment
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v5
         with:
-          node-version: 16
+          node-version: 22
 
       - uses: marceloprado/has-changed-path@v1
         id: changed-acala-evm

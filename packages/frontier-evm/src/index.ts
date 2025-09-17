@@ -25,8 +25,11 @@ import {
   TypedEventRecord,
   SubstrateEvent,
   SecondLayerHandlerProcessor,
+  RuntimeHandlerInputMap,
+  SubstrateEventFilter,
+  SubstrateCallFilter,
 } from '@subql/types';
-import {DsProcessor, DictionaryQueryEntry} from '@subql/types-core';
+import {DsProcessor, DictionaryQueryEntry, SecondLayerHandlerProcessor_1_0_0} from '@subql/types-core';
 import {plainToClass} from 'class-transformer';
 import {
   IsOptional,
@@ -231,12 +234,16 @@ function buildInterface(ds: FrontierEvmDatasource, assets?: Record<string, strin
   return contractInterfaces[abi];
 }
 
-const EventProcessor: SecondLayerHandlerProcessor<
+const EventProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Event,
+  RuntimeHandlerInputMap,
+  {
+    [SubstrateHandlerKind.Event]: SubstrateEventFilter;
+  },
   FrontierEvmEventFilter,
   FrontierEvmEvent,
-  // [EvmLog],
-  FrontierEvmDatasource
+  FrontierEvmDatasource,
+  ApiPromise
 > = {
   specVersion: '1.0.0',
   baseFilter: [{module: 'evm', method: 'Log'}],
@@ -350,12 +357,17 @@ const EventProcessor: SecondLayerHandlerProcessor<
   },
 };
 
-const CallProcessor: SecondLayerHandlerProcessor<
+const CallProcessor: SecondLayerHandlerProcessor_1_0_0<
   SubstrateHandlerKind.Call,
+  RuntimeHandlerInputMap,
+  {
+    [SubstrateHandlerKind.Call]: SubstrateCallFilter;
+  },
   FrontierEvmCallFilter,
   FrontierEvmCall,
   // [TransactionV3 | EthTransaction],
-  FrontierEvmDatasource
+  FrontierEvmDatasource,
+  ApiPromise
 > = {
   specVersion: '1.0.0',
   baseFilter: [{module: 'ethereum', method: 'transact'}],

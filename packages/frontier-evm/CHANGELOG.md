@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Update to the latest compatible polkadot related deps (#58)
+- Update headers to 2025
 
 ## [1.0.1] - 2024-08-14
 ### Changed

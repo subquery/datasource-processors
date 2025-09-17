@@ -3340,7 +3340,7 @@ __metadata:
     esbuild: ^0.15.18
     ethers: ^5.7.2
   peerDependencies:
-    "@polkadot/api": ^15
+    "@polkadot/api": ~15.5
   languageName: unknown
   linkType: soft
 

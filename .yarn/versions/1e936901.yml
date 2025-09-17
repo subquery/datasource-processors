@@ -1,0 +1,6 @@
+undecided:
+  - "@subql/datasource-processors"
+  - "@subql/acala-evm-processor"
+  - "@subql/ethermint-evm-processor"
+  - "@subql/frontier-evm-processor"
+  - "@subql/moonbeam-evm-processor"

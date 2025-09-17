@@ -24,5 +24,6 @@
   },
   "peerDependencies": {
     "@polkadot/api": "~15.5"
-  }
+  },
+  "stableVersion": "1.0.1"
 }

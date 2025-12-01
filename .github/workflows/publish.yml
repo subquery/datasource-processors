@@ -1,0 +1,210 @@
+name: 'Publish'
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '.github/workflows/**'
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  pre-ci:
+    name: Pre-CI (Extract Commit Message)
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    outputs:
+      commit-message: ${{ steps.get_commit_message.outputs.commit-message }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - id: get_commit_message
+        run: |
+          if [ -n "${{ github.event.head_commit.message }}" ]
+          then
+            commit_msg="${{ github.event.head_commit.message }}"
+            echo "commit-message=${commit_msg}" | head -n 1 >> "$GITHUB_OUTPUT"
+          else
+            commit_message=$(git log -1 --pretty=%B | head -n 1)
+            echo "commit-message=$commit_message" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Debug commit message
+        run: |
+          echo "Commit message: ${{ steps.get_commit_message.outputs.commit-message }}"
+
+  setup:
+    name: Setup & Detect Changes
+    needs: pre-ci
+    runs-on: ubuntu-latest
+    outputs:
+      changed-acala-evm: ${{ steps.changed-acala-evm.outputs.changed }}
+      changed-frontier-evm: ${{ steps.changed-frontier-evm.outputs.changed }}
+      changed-moonbeam-evm: ${{ steps.changed-moonbeam-evm.outputs.changed }}
+      changed-ethermint-evm: ${{ steps.changed-ethermint-evm.outputs.changed }}
+      changed-substrate-wasm: ${{ steps.changed-substrate-wasm.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 100 # Needed to detect changes by having commit history
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-acala-evm
+        with:
+          paths: packages/acala-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-frontier-evm
+        with:
+          paths: packages/frontier-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-moonbeam-evm
+        with:
+          paths: packages/moonbeam-evm
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-ethermint-evm
+        with:
+          paths: packages/ethermint-evm
+      - run: yarn
+
+      - uses: marceloprado/has-changed-path@v1
+        id: changed-substrate-wasm
+        with:
+          paths: packages/substrate-wasm
+      - run: yarn
+
+  release:
+    name: Release Publish
+    needs: [pre-ci, setup]
+    if: >
+      !startsWith(github.event.head_commit.message, '[SKIP CI]')
+      && startsWith(github.event.head_commit.message, '[release]')
+      && github.repository == 'subquery/datasource-processors'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - run: yarn
+
+      - name: build
+        run: yarn build
+
+      # Publish to npm and github releases
+      - name: Publish acala-evm
+        if: needs.setup.outputs.changed-acala-evm == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/acala-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Publish frontier-evm
+        if: needs.setup.outputs.changed-frontier-evm == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/frontier-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Publish moonbeam-evm
+        if: needs.setup.outputs.changed-moonbeam-evm == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/moonbeam-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Publish ethermint-evm
+        if: needs.setup.outputs.changed-ethermint-evm == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/ethermint-evm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+
+      - name: Publish substrate-wasm
+        if: needs.setup.outputs.changed-substrate-wasm == 'true'
+        uses: ./.github/actions/create-release
+        with:
+          package-path: packages/substrate-wasm
+          repo-token: ${{ secrets.REPO_TOKEN }}
+
+  prerelease:
+    name: Prerelease Publish
+    needs: [pre-ci, setup]
+    if: >
+      !startsWith(needs.pre-ci.outputs.commit-message, '[SKIP CI]')
+      && !startsWith(needs.pre-ci.outputs.commit-message, '[release]')
+      && github.repository == 'subquery/datasource-processors'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.REPO_TOKEN }} # Needed to push changes back to repo
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v5
+        with:
+          node-version: lts/*
+
+      - name: Update npm
+        run: npm install -g npm@latest
+
+      - run: yarn
+
+      - name: build
+        run: yarn build
+
+      # Prerelease publish steps
+      - name: Bump acala-evm & deploy
+        if: steps.changed-acala-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/acala-evm
+
+      - name: Bump frontier-evm & deploy
+        if: steps.changed-frontier-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/frontier-evm
+
+      - name: Bump moonbeam-evm & deploy
+        if: steps.changed-moonbeam-evm.outputs.changed == 'true' || steps.changed-frontier-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/moonbeam-evm
+
+      - name: Bump ethermint-evm & deploy
+        if: steps.changed-ethermint-evm.outputs.changed == 'true' || steps.changed-ethermint-evm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/ethermint-evm
+
+      - name: Bump substrate-wasm & deploy
+        if: steps.changed-substrate-wasm.outputs.changed == 'true'
+        uses: ./.github/actions/create-prerelease
+        with:
+          package-path: packages/substrate-wasm
+
+      - name: Commit changes
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: '[SKIP CI] Prerelease'
+          default_author: github_actions

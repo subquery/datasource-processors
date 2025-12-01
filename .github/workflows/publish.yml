@@ -125,7 +125,7 @@ jobs:
           repo-token: ${{ secrets.REPO_TOKEN }}
 
       - name: Publish moonbeam-evm
-        if: needs.setup.outputs.changed-moonbeam-evm == 'true'
+        if: needs.setup.outputs.changed-moonbeam-evm == 'true' || needs.setup.outputs.changed-frontier-evm == 'true'
         uses: ./.github/actions/create-release
         with:
           package-path: packages/moonbeam-evm
@@ -174,31 +174,31 @@ jobs:
 
       # Prerelease publish steps
       - name: Bump acala-evm & deploy
-        if: steps.changed-acala-evm.outputs.changed == 'true'
+        if: needs.setup.outputs.changed-acala-evm == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/acala-evm
 
       - name: Bump frontier-evm & deploy
-        if: steps.changed-frontier-evm.outputs.changed == 'true'
+        if: needs.setup.outputs.changed-frontier-evm == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/frontier-evm
 
       - name: Bump moonbeam-evm & deploy
-        if: steps.changed-moonbeam-evm.outputs.changed == 'true' || steps.changed-frontier-evm.outputs.changed == 'true'
+        if: needs.setup.outputs.changed-moonbeam-evm == 'true' || needs.setup.outputs.changed-frontier-evm == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/moonbeam-evm
 
       - name: Bump ethermint-evm & deploy
-        if: steps.changed-ethermint-evm.outputs.changed == 'true' || steps.changed-ethermint-evm.outputs.changed == 'true'
+        if: needs.setup.outputs.changed-ethermint-evm == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/ethermint-evm
 
       - name: Bump substrate-wasm & deploy
-        if: steps.changed-substrate-wasm.outputs.changed == 'true'
+        if: needs.setup.outputs.changed-substrate-wasm == 'true'
         uses: ./.github/actions/create-prerelease
         with:
           package-path: packages/substrate-wasm
